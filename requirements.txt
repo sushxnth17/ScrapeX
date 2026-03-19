@@ -1,0 +1,8 @@
+beautifulsoup4
+requests
+trafilatura
+pandas
+reportLab
+playwright
+lxml
+streamlit

@@ -1,0 +1,1 @@
+"""Generates PDF reports from the extracted content"""

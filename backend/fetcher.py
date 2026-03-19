@@ -1,0 +1,1 @@
+"""Handles fetching HTML contents from websites Supports both static and dynamic content"""

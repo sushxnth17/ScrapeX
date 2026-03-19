@@ -1,0 +1,1 @@
+"""Parses the fetched HTML into structured JSON format"""
