@@ -41,7 +41,7 @@ def fetch_with_requests(url: str) -> Optional[str]:
         print("Error: Request timed out (10 seconds)")
         return None
     except requests.exceptions.ConnectionError:
-        print("Error: Failed to connect to the URL")
+        print("Requests failed, trying Playwright...")
         return None
     except requests.exceptions.RequestException as e:
         print(f"Error: {str(e)}")
