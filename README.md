@@ -2,9 +2,19 @@
 A smart web scraping tool that converts websites into structured data (PDF +CSV)
 
 ## Status
-Under Development
+🚧 In Progress
 
-## Planned Features
+Core pipeline completed:
+- Fetching (requests + Playwright fallback)
+- Content extraction (Trafilatura)
+- Structured parsing (headings, links, tables)
+
+## Features (Completed)
 - Universal scraping pipeline
-- Content extraction
-- PDF + CSV export
+- Clean content extraction
+- Structured data parsing
+
+## Upcoming Features
+- PDF export
+- CSV export
+- Web UI
