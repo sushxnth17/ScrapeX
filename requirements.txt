@@ -6,3 +6,5 @@ reportLab
 playwright
 lxml
 streamlit
+fastapi
+uvicorn
