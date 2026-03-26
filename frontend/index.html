@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+	<title>ScrapeX</title>
+	<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+	<header>
+		<h1>ScrapeX</h1>
+		<p>Turn any website into structured data</p>
+	</header>
+
+	<main>
+		<section aria-labelledby="scrape-form-title">
+			<h2 id="scrape-form-title">Start Scraping</h2>
+			<form id="scrape-form" novalidate>
+				<label for="url-input">Website URL</label>
+				<input
+					id="url-input"
+					name="url"
+					type="url"
+					placeholder="https://example.com"
+					required
+				/>
+				<button type="submit">Scrape</button>
+			</form>
+			<p id="loading-message" role="status" aria-live="polite"></p>
+		</section>
+
+		<section id="results" aria-labelledby="results-title">
+			<h2 id="results-title">Results</h2>
+
+			<article aria-labelledby="page-title-label">
+				<h3 id="page-title-label">Title</h3>
+				<p id="result-title">No data yet.</p>
+			</article>
+
+			<article aria-labelledby="stats-label">
+				<h3 id="stats-label">Content Stats</h3>
+				<dl>
+					<div>
+						<dt>Length</dt>
+						<dd id="stat-length">0</dd>
+					</div>
+					<div>
+						<dt>Headings</dt>
+						<dd id="stat-headings">0</dd>
+					</div>
+					<div>
+						<dt>Paragraphs</dt>
+						<dd id="stat-paragraphs">0</dd>
+					</div>
+					<div>
+						<dt>Links</dt>
+						<dd id="stat-links">0</dd>
+					</div>
+					<div>
+						<dt>Tables</dt>
+						<dd id="stat-tables">0</dd>
+					</div>
+				</dl>
+			</article>
+
+			<article aria-labelledby="preview-label">
+				<h3 id="preview-label">Content Preview</h3>
+				<pre id="content-preview">Scraped content preview will appear here.</pre>
+			</article>
+
+			<section aria-label="Export Options">
+				<button id="download-csv" type="button">Download CSV</button>
+				<button id="download-pdf" type="button">Download PDF</button>
+			</section>
+		</section>
+	</main>
+
+	<script src="script.js"></script>
+</body>
+</html>
