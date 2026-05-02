@@ -17,4 +17,5 @@ Core pipeline completed:
 ## Upcoming Features
 - PDF export
 - CSV export
-- Web UI
+
+
