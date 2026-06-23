@@ -4,9 +4,14 @@ from __future__ import annotations
 
 from typing import Any, Dict, Optional
 
-from extractor import extract_content
-from fetcher import fetch_html
-from parser import parse_html
+try:
+    from .extractor import extract_content
+    from .fetcher import fetch_html
+    from .parser import parse_html
+except ImportError:
+    from extractor import extract_content
+    from fetcher import fetch_html
+    from parser import parse_html
 
 
 def scrape(url: str) -> Optional[Dict[str, Any]]:

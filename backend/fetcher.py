@@ -1,93 +1,113 @@
-"""Handles fetching HTML contents from websites Supports both static and dynamic content"""
+"""Utilities for fetching page HTML using requests with a Playwright fallback."""
+
+from __future__ import annotations
+
+from typing import Optional
 
 import requests
 from playwright.sync_api import sync_playwright
-from typing import Optional
 
 
-# Minimum HTML length threshold for validation
 MIN_HTML_LENGTH = 500
+DEFAULT_USER_AGENT = (
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+    "AppleWebKit/537.36 (KHTML, like Gecko) "
+    "Chrome/124.0.0.0 Safari/537.36"
+)
+
+
+def _looks_like_html(html: str) -> bool:
+    """Return True when content appears to be a real HTML document."""
+    if not html:
+        return False
+
+    text = html.strip()
+    if len(text) < MIN_HTML_LENGTH:
+        return False
+
+    lower = text.lower()
+    return "<html" in lower or "<!doctype html" in lower
 
 
 def fetch_with_requests(url: str) -> Optional[str]:
-    """
-    Fetch HTML from a URL using the requests library.
-    
-    Args:
-        url: The URL to fetch
-        
-    Returns:
-        HTML text if successful, None otherwise
-    """
+    """Fetch HTML using requests for fast static-page retrieval."""
     print(f"Trying requests for: {url}")
+    headers = {
+        "User-Agent": DEFAULT_USER_AGENT,
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        "Accept-Language": "en-US,en;q=0.9",
+        "Cache-Control": "no-cache",
+        "Pragma": "no-cache",
+    }
+
     try:
-        headers = {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36"
-        }
-        response = requests.get(url, headers=headers, timeout=10)
+        response = requests.get(url, headers=headers, timeout=15, allow_redirects=True)
         response.encoding = response.apparent_encoding
-        # Validate response
-        if response.status_code != 200:
+        html = response.text or ""
+
+        if response.status_code >= 500:
             print(f"Error: HTTP {response.status_code}")
             return None
-            
-        if not response.text or len(response.text) < MIN_HTML_LENGTH:
-            print("Error: Response is empty or too small")
-            return None
-        
-        return response.text
-        
+
+        # Some sites return challenge pages with non-200 status. If it's valid HTML,
+        # pass it through and let parser/extractor decide.
+        if _looks_like_html(html):
+            if response.status_code != 200:
+                print(f"Warning: Non-200 response ({response.status_code}) but HTML was returned")
+            return html
+
+        print("Requests returned empty or non-HTML content")
+        return None
+
     except requests.exceptions.Timeout:
-        print("Error: Request timed out (10 seconds)")
+        print("Error: Request timed out (15 seconds)")
         return None
     except requests.exceptions.ConnectionError:
         print("Requests failed, trying Playwright...")
         return None
-    except requests.exceptions.RequestException as e:
-        print(f"Error: {str(e)}")
+    except requests.exceptions.RequestException as exc:
+        print(f"Error: {exc}")
         return None
 
 
 def fetch_with_playwright(url: str) -> Optional[str]:
-    """
-    Fetch HTML from a URL using Playwright with JavaScript rendering support.
-    
-    Args:
-        url: The URL to fetch
-        
-    Returns:
-        Rendered HTML text if successful, None otherwise
-    """
+    """Fetch HTML using Playwright for JavaScript-heavy or protected pages."""
     print(f"Trying Playwright for: {url}")
-    with sync_playwright() as p:
-        browser = p.chromium.launch(headless=True)
-        try:
-            ...
-        finally:
-            browser.close()
     try:
         with sync_playwright() as p:
-            browser = p.chromium.launch(headless=True)
-            page = browser.new_page()
-            
-            page.goto(url, timeout=10000)
-            page.wait_for_load_state("networkidle")
-            page.wait_for_timeout(2000)  # wait 2 seconds
-            
-            html = page.content()
-            
-            if not html or len(html) < MIN_HTML_LENGTH:
-                print("Error: Response is empty or too small")
-                return None
-            
-            page.close()
-            browser.close()
-            return html
-            
-    except Exception as e:
-        print(f"Error: Playwright failed - {str(e)}")
-        if browser:
-            browser.close()
+            browser = p.chromium.launch(
+                headless=True,
+                args=["--disable-blink-features=AutomationControlled"],
+            )
+            context = browser.new_context(
+                user_agent=DEFAULT_USER_AGENT,
+                viewport={"width": 1440, "height": 900},
+                locale="en-US",
+            )
+            page = context.new_page()
+
+            page.goto(url, timeout=30000, wait_until="domcontentloaded")
+            page.wait_for_timeout(2500)
+
+            # Trigger potential lazy-loading sections.
+            page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
+            page.wait_for_timeout(1200)
+
+            html = page.content() or ""
+            if _looks_like_html(html):
+                return html
+
+            # Retry with a stricter wait strategy before giving up.
+            page.reload(timeout=30000, wait_until="networkidle")
+            page.wait_for_timeout(1500)
+            html = page.content() or ""
+            if _looks_like_html(html):
+                return html
+
+            print("Error: Playwright returned empty or non-HTML content")
+            return None
+    except Exception as exc:
+        print(f"Error: Playwright failed - {exc}")
         return None
 
 

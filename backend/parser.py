@@ -6,7 +6,10 @@ from typing import Dict, List
 
 from bs4 import BeautifulSoup
 
-from fetcher import fetch_html
+try:
+	from .fetcher import fetch_html
+except ImportError:
+	from fetcher import fetch_html
 
 
 def _clean_text(value: str) -> str:

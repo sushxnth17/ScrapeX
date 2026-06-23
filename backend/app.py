@@ -4,15 +4,23 @@ from __future__ import annotations
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
 from pydantic import BaseModel, HttpUrl
 import uvicorn
 
 try:
-	# Works when running from project root: uvicorn backend.app:app
-	from backend.main import scrape
+	# Works when running as a package: uvicorn backend.app:app
+	from .main import scrape
 except ImportError:
 	# Works when running from backend folder: uvicorn app:app or uvicorn api:app
 	from main import scrape
+
+try:
+	from .exporter.csv_export import export_to_csv
+	from .exporter.pdf import export_to_pdf
+except ImportError:
+	from exporter.csv_export import export_to_csv
+	from exporter.pdf import export_to_pdf
 
 
 class ScrapeRequest(BaseModel):
@@ -54,6 +62,36 @@ def scrape_endpoint(payload: ScrapeRequest):
 		raise HTTPException(status_code=502, detail="Scraping failed: Unable to fetch or process URL.")
 
 	return result
+
+
+@app.post("/download/csv")
+def download_csv(payload: ScrapeRequest):
+	"""Download scraped links as a CSV file."""
+	try:
+		result = scrape(str(payload.url))
+	except Exception as exc:
+		raise HTTPException(status_code=500, detail=f"Scraping failed: {exc}") from exc
+
+	if not result:
+		raise HTTPException(status_code=502, detail="Scraping failed: Unable to fetch or process URL.")
+
+	export_to_csv(result)
+	return FileResponse("links.csv", media_type="text/csv", filename="data.csv")
+
+
+@app.post("/download/pdf")
+def download_pdf(payload: ScrapeRequest):
+	"""Download scraped data as a PDF report."""
+	try:
+		result = scrape(str(payload.url))
+	except Exception as exc:
+		raise HTTPException(status_code=500, detail=f"Scraping failed: {exc}") from exc
+
+	if not result:
+		raise HTTPException(status_code=502, detail="Scraping failed: Unable to fetch or process URL.")
+
+	export_to_pdf(result)
+	return FileResponse("report.pdf", media_type="application/pdf", filename="data.pdf")
 
 
 if __name__ == "__main__":

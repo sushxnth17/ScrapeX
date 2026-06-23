@@ -1,5 +1,6 @@
 const form = document.getElementById("scrape-form");
 const loadingMsg = document.getElementById("loading-message");
+const API_BASE_URL = "http://127.0.0.1:8000";
 
 // Result elements
 const titleEl = document.getElementById("result-title");
@@ -28,7 +29,7 @@ form.addEventListener("submit", async (e) => {
 	loadingMsg.textContent = "Scraping...";
 
 	try {
-		const response = await fetch("http://127.0.0.1:8000/scrape", {
+		const response = await fetch(`${API_BASE_URL}/scrape`, {
 			method: "POST",
 			headers: {
 				"Content-Type": "application/json"
@@ -36,9 +37,14 @@ form.addEventListener("submit", async (e) => {
 			body: JSON.stringify({ url })
 		});
 
-		const data = await response.json();
+		const data = await response.json().catch(() => ({}));
 
 		loadingMsg.textContent = "";
+
+		if (!response.ok) {
+			alert(data.detail || data.error || `Request failed with status ${response.status}`);
+			return;
+		}
 
 		if (data.error) {
 			alert(data.error);
@@ -60,15 +66,53 @@ form.addEventListener("submit", async (e) => {
 	} catch (error) {
 		console.error(error);
 		loadingMsg.textContent = "";
-		alert("Error connecting to backend");
+		alert(`Cannot connect to backend at ${API_BASE_URL}. Make sure the API server is running.`);
 	}
 });
 
+async function downloadFile(endpoint, filename) {
+	const url = document.getElementById("url-input").value;
+
+	if (!url) {
+		alert("Please enter a URL first");
+		return;
+	}
+
+	try {
+		const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+			method: "POST",
+			headers: {
+				"Content-Type": "application/json"
+			},
+			body: JSON.stringify({ url })
+		});
+
+		if (!response.ok) {
+			const data = await response.json().catch(() => ({}));
+			alert(data.detail || data.error || `Download failed with status ${response.status}`);
+			return;
+		}
+
+		const blob = await response.blob();
+		const objectUrl = window.URL.createObjectURL(blob);
+		const link = document.createElement("a");
+		link.href = objectUrl;
+		link.download = filename;
+		document.body.appendChild(link);
+		link.click();
+		link.remove();
+		window.URL.revokeObjectURL(objectUrl);
+	} catch (error) {
+		console.error(error);
+		alert(`Cannot connect to backend at ${API_BASE_URL}. Make sure the API server is running.`);
+	}
+}
+
 // Download handlers
 csvBtn.addEventListener("click", () => {
-	window.open("http://127.0.0.1:8000/download/csv");
+	downloadFile("/download/csv", "data.csv");
 });
 
 pdfBtn.addEventListener("click", () => {
-	window.open("http://127.0.0.1:8000/download/pdf");
+	downloadFile("/download/pdf", "data.pdf");
 });
