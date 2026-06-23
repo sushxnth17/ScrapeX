@@ -13,6 +13,7 @@ const previewEl = document.getElementById("content-preview");
 
 // Download buttons
 const csvBtn = document.getElementById("download-csv");
+const tablesBtn = document.getElementById("download-tables");
 const pdfBtn = document.getElementById("download-pdf");
 
 // Handle form submit
@@ -111,6 +112,10 @@ async function downloadFile(endpoint, filename) {
 // Download handlers
 csvBtn.addEventListener("click", () => {
 	downloadFile("/download/csv", "data.csv");
+});
+
+tablesBtn.addEventListener("click", () => {
+	downloadFile("/download/tables-csv", "tables.csv");
 });
 
 pdfBtn.addEventListener("click", () => {

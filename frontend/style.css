@@ -200,6 +200,11 @@ button:active {
   box-shadow: 0 8px 18px rgba(233, 90, 59, 0.28);
 }
 
+#download-tables {
+  background: linear-gradient(120deg, #8a2be2, #ba55d3);
+  box-shadow: 0 8px 18px rgba(138, 43, 226, 0.28);
+}
+
 #result-title {
   margin: 10px 0 0;
   color: #2b3e58;

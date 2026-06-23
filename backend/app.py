@@ -40,6 +40,9 @@ app.add_middleware(
 )
 
 
+scrape_cache: dict = {}
+
+
 @app.get("/")
 def root():
 	"""Simple root route to confirm API is running."""
@@ -61,35 +64,57 @@ def scrape_endpoint(payload: ScrapeRequest):
 	if result is None:
 		raise HTTPException(status_code=502, detail="Scraping failed: Unable to fetch or process URL.")
 
+	scrape_cache[str(payload.url)] = result
 	return result
 
 
 @app.post("/download/csv")
 def download_csv(payload: ScrapeRequest):
 	"""Download scraped links as a CSV file."""
+	url_str = str(payload.url)
 	try:
-		result = scrape(str(payload.url))
+		result = scrape_cache.get(url_str) or scrape(url_str)
 	except Exception as exc:
 		raise HTTPException(status_code=500, detail=f"Scraping failed: {exc}") from exc
 
 	if not result:
 		raise HTTPException(status_code=502, detail="Scraping failed: Unable to fetch or process URL.")
 
+	scrape_cache[url_str] = result
 	export_to_csv(result)
 	return FileResponse("links.csv", media_type="text/csv", filename="data.csv")
+
+
+@app.post("/download/tables-csv")
+def download_tables_csv(payload: ScrapeRequest):
+	"""Download scraped tables as a CSV file."""
+	url_str = str(payload.url)
+	try:
+		result = scrape_cache.get(url_str) or scrape(url_str)
+	except Exception as exc:
+		raise HTTPException(status_code=500, detail=f"Scraping failed: {exc}") from exc
+
+	if not result:
+		raise HTTPException(status_code=502, detail="Scraping failed: Unable to fetch or process URL.")
+
+	scrape_cache[url_str] = result
+	export_to_csv(result)
+	return FileResponse("tables.csv", media_type="text/csv", filename="tables.csv")
 
 
 @app.post("/download/pdf")
 def download_pdf(payload: ScrapeRequest):
 	"""Download scraped data as a PDF report."""
+	url_str = str(payload.url)
 	try:
-		result = scrape(str(payload.url))
+		result = scrape_cache.get(url_str) or scrape(url_str)
 	except Exception as exc:
 		raise HTTPException(status_code=500, detail=f"Scraping failed: {exc}") from exc
 
 	if not result:
 		raise HTTPException(status_code=502, detail="Scraping failed: Unable to fetch or process URL.")
 
+	scrape_cache[url_str] = result
 	export_to_pdf(result)
 	return FileResponse("report.pdf", media_type="application/pdf", filename="data.pdf")
 

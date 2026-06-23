@@ -65,13 +65,14 @@ def export_to_csv(data: Dict[str, Any], base_filename: str = "output") -> None:
 	payload = data if isinstance(data, dict) else {}
 
 	links = _normalize_links(payload.get("links", []))
-	if links:
-		links_df = pd.DataFrame(links, columns=["text", "href"])
-		links_df.to_csv("links.csv", index=False)
-		print("Links CSV saved")
+	links_df = pd.DataFrame(links, columns=["text", "href"])
+	links_df.to_csv("links.csv", index=False)
+	print("Links CSV saved")
 
 	table_rows = _flatten_tables(payload.get("tables", []))
 	if table_rows:
 		tables_df = pd.DataFrame(table_rows)
-		tables_df.to_csv("tables.csv", index=False)
-		print("Tables CSV saved")
+	else:
+		tables_df = pd.DataFrame(columns=["table_index", "row_index", "col_1"])
+	tables_df.to_csv("tables.csv", index=False)
+	print("Tables CSV saved")

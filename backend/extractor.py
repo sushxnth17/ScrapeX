@@ -96,11 +96,8 @@ def extract_basic(html: str) -> Optional[Dict[str, str]]:
         text_blocks = [p.get_text(strip=True) for p in paragraphs if len(p.get_text(strip=True)) > 50]
         text = ' '.join(text_blocks)
 
-        if not paragraphs:
+        if not text_blocks:
             return None
-        
-        # Combine all paragraphs into single text
-        text = ' '.join([p.get_text(strip=True) for p in paragraphs])
         
         # Validate text
         if not text or len(text.strip()) < MIN_TEXT_LENGTH:
