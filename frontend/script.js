@@ -11,6 +11,20 @@ const linksEl = document.getElementById("stat-links");
 const tablesEl = document.getElementById("stat-tables");
 const previewEl = document.getElementById("content-preview");
 
+// Helper to format error messages (handles Pydantic arrays and custom details)
+function getErrorMessage(data, fallbackMsg) {
+	if (data && data.detail) {
+		if (Array.isArray(data.detail)) {
+			return data.detail.map(err => err.msg || JSON.stringify(err)).join("\n");
+		}
+		if (typeof data.detail === "string") {
+			return data.detail;
+		}
+		return JSON.stringify(data.detail);
+	}
+	return data?.error || fallbackMsg;
+}
+
 // Download buttons
 const csvBtn = document.getElementById("download-csv");
 const tablesBtn = document.getElementById("download-tables");
@@ -43,7 +57,7 @@ form.addEventListener("submit", async (e) => {
 		loadingMsg.textContent = "";
 
 		if (!response.ok) {
-			alert(data.detail || data.error || `Request failed with status ${response.status}`);
+			alert(getErrorMessage(data, `Request failed with status ${response.status}`));
 			return;
 		}
 
@@ -90,7 +104,7 @@ async function downloadFile(endpoint, filename) {
 
 		if (!response.ok) {
 			const data = await response.json().catch(() => ({}));
-			alert(data.detail || data.error || `Download failed with status ${response.status}`);
+			alert(getErrorMessage(data, `Download failed with status ${response.status}`));
 			return;
 		}
 
