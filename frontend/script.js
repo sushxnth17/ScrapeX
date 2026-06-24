@@ -10,6 +10,21 @@ const paragraphsEl = document.getElementById("stat-paragraphs");
 const linksEl = document.getElementById("stat-links");
 const tablesEl = document.getElementById("stat-tables");
 const previewEl = document.getElementById("content-preview");
+const tablesContainer = document.getElementById("extracted-tables-container");
+
+// Helper to format error messages (handles Pydantic arrays and custom details)
+function getErrorMessage(data, fallbackMsg) {
+	if (data && data.detail) {
+		if (Array.isArray(data.detail)) {
+			return data.detail.map(err => err.msg || JSON.stringify(err)).join("\n");
+		}
+		if (typeof data.detail === "string") {
+			return data.detail;
+		}
+		return JSON.stringify(data.detail);
+	}
+	return data?.error || fallbackMsg;
+}
 
 // Download buttons
 const csvBtn = document.getElementById("download-csv");
@@ -43,7 +58,7 @@ form.addEventListener("submit", async (e) => {
 		loadingMsg.textContent = "";
 
 		if (!response.ok) {
-			alert(data.detail || data.error || `Request failed with status ${response.status}`);
+			alert(getErrorMessage(data, `Request failed with status ${response.status}`));
 			return;
 		}
 
@@ -64,6 +79,44 @@ form.addEventListener("submit", async (e) => {
 			? data.clean_text.slice(0, 300) + "..."
 			: "No preview available";
 
+		// Render Extracted Tables
+		tablesContainer.innerHTML = "";
+		if (data.tables && data.tables.length > 0) {
+			data.tables.forEach((tableData, index) => {
+				const wrapper = document.createElement("div");
+				wrapper.className = "table-wrapper";
+
+				const tableEl = document.createElement("table");
+				tableEl.className = "scraped-table";
+
+				tableData.forEach((row, rowIndex) => {
+					const tr = document.createElement("tr");
+					row.forEach(cell => {
+						const cellEl = document.createElement(rowIndex === 0 ? "th" : "td");
+						cellEl.textContent = cell;
+						tr.appendChild(cellEl);
+					});
+					tableEl.appendChild(tr);
+				});
+
+				wrapper.appendChild(tableEl);
+				
+				const titleDiv = document.createElement("h4");
+				titleDiv.textContent = `Table ${index + 1}:`;
+				titleDiv.style.margin = "14px 0 6px 0";
+				titleDiv.style.color = "var(--ink)";
+				titleDiv.style.fontFamily = "'Syne', 'Segoe UI', sans-serif";
+				
+				tablesContainer.appendChild(titleDiv);
+				tablesContainer.appendChild(wrapper);
+			});
+		} else {
+			const noTables = document.createElement("p");
+			noTables.className = "no-tables-msg";
+			noTables.textContent = "No tables found on this page.";
+			tablesContainer.appendChild(noTables);
+		}
+
 	} catch (error) {
 		console.error(error);
 		loadingMsg.textContent = "";
@@ -71,13 +124,18 @@ form.addEventListener("submit", async (e) => {
 	}
 });
 
-async function downloadFile(endpoint, filename) {
+async function downloadFile(endpoint, filename, buttonEl) {
 	const url = document.getElementById("url-input").value;
 
 	if (!url) {
 		alert("Please enter a URL first");
 		return;
 	}
+
+	const originalText = buttonEl.textContent;
+	const isPdf = filename.toLowerCase().endsWith(".pdf");
+	buttonEl.textContent = isPdf ? "Downloading PDF..." : "Downloading CSV...";
+	buttonEl.disabled = true;
 
 	try {
 		const response = await fetch(`${API_BASE_URL}${endpoint}`, {
@@ -90,7 +148,7 @@ async function downloadFile(endpoint, filename) {
 
 		if (!response.ok) {
 			const data = await response.json().catch(() => ({}));
-			alert(data.detail || data.error || `Download failed with status ${response.status}`);
+			alert(getErrorMessage(data, `Download failed with status ${response.status}`));
 			return;
 		}
 
@@ -106,18 +164,21 @@ async function downloadFile(endpoint, filename) {
 	} catch (error) {
 		console.error(error);
 		alert(`Cannot connect to backend at ${API_BASE_URL}. Make sure the API server is running.`);
+	} finally {
+		buttonEl.textContent = originalText;
+		buttonEl.disabled = false;
 	}
 }
 
 // Download handlers
 csvBtn.addEventListener("click", () => {
-	downloadFile("/download/csv", "data.csv");
+	downloadFile("/download/csv", "data.csv", csvBtn);
 });
 
 tablesBtn.addEventListener("click", () => {
-	downloadFile("/download/tables-csv", "tables.csv");
+	downloadFile("/download/tables-csv", "tables.csv", tablesBtn);
 });
 
 pdfBtn.addEventListener("click", () => {
-	downloadFile("/download/pdf", "data.pdf");
+	downloadFile("/download/pdf", "data.pdf", pdfBtn);
 });
