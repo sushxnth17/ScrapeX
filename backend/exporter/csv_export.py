@@ -53,26 +53,25 @@ def _flatten_tables(raw_tables: Any) -> List[Dict[str, str]]:
 	return flat_rows
 
 
-def export_to_csv(data: Dict[str, Any], base_filename: str = "output") -> None:
+def export_to_csv(data: Dict[str, Any], links_filename: str = "links.csv", tables_filename: str = "tables.csv") -> None:
 	"""Export links and tables from parsed scrape data into CSV files.
 
 	Args:
 		data: Parsed scrape output dictionary.
-		base_filename: Reserved for future naming strategies.
+		links_filename: Destination filename for links.
+		tables_filename: Destination filename for tables.
 	"""
-	_ = base_filename
-
 	payload = data if isinstance(data, dict) else {}
 
 	links = _normalize_links(payload.get("links", []))
 	links_df = pd.DataFrame(links, columns=["text", "href"])
-	links_df.to_csv("links.csv", index=False)
-	print("Links CSV saved")
+	links_df.to_csv(links_filename, index=False)
+	print(f"Links CSV saved to {links_filename}")
 
 	table_rows = _flatten_tables(payload.get("tables", []))
 	if table_rows:
 		tables_df = pd.DataFrame(table_rows)
 	else:
 		tables_df = pd.DataFrame(columns=["table_index", "row_index", "col_1"])
-	tables_df.to_csv("tables.csv", index=False)
-	print("Tables CSV saved")
+	tables_df.to_csv(tables_filename, index=False)
+	print(f"Tables CSV saved to {tables_filename}")

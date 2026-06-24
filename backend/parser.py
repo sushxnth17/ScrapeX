@@ -98,6 +98,66 @@ def parse_html(html: str) -> Dict[str, object]:
 	tables = []
 	seen_tables = set()
 	for table in soup.find_all("table"):
+		# 1. Filter out layout, navigation, maintenance, or warning tables by role, classes, or ancestors
+		table_classes = set(c.lower() for c in table.get("class", []) if isinstance(c, str))
+		table_role = (table.get("role") or "").lower()
+		table_id = (table.get("id") or "").lower()
+
+		if table_role in ["presentation", "none", "navigation"]:
+			continue
+
+		ignored_keywords = {
+			"nav", "navigation", "navbox", "sidebar", "menu", "vertical-navbox",
+			"navbox-inner", "metadata", "maintenance", "mbox", "ambox", "imbox",
+			"tmbox", "fmbox", "ombox", "cmbox", "warning", "error", "alert",
+			"caution", "info", "toc"
+		}
+
+		is_ignored = False
+		# Check table ID for ignored keywords
+		for kw in ignored_keywords:
+			if table_id == kw or table_id.startswith(kw + "-") or table_id.endswith("-" + kw):
+				is_ignored = True
+				break
+
+		# Check table classes for ignored keywords (excluding infoboxes)
+		if not is_ignored:
+			for cls in table_classes:
+				if "infobox" in cls:
+					continue
+				for kw in ignored_keywords:
+					if cls == kw or cls.startswith(kw + "-") or cls.endswith("-" + kw):
+						is_ignored = True
+						break
+				if is_ignored:
+					break
+
+		# Check if the table is nested inside any ignored tags, roles, or class structures
+		if not is_ignored:
+			for parent in table.parents:
+				if parent.name in ["nav", "header", "footer"]:
+					is_ignored = True
+					break
+				parent_role = (parent.get("role") or "").lower()
+				if parent_role == "navigation":
+					is_ignored = True
+					break
+				parent_classes = set(c.lower() for c in parent.get("class", []) if isinstance(c, str))
+				for cls in parent_classes:
+					if "infobox" in cls:
+						continue
+					for kw in ignored_keywords:
+						if cls == kw or cls.startswith(kw + "-") or cls.endswith("-" + kw):
+							is_ignored = True
+							break
+					if is_ignored:
+						break
+				if is_ignored or parent.name == "body":
+					break
+
+		if is_ignored:
+			continue
+
 		rows = []
 		for tr in table.find_all("tr"):
 			cells = [_clean_text(cell.get_text()) for cell in tr.find_all(["th", "td"])]
@@ -105,7 +165,12 @@ def parse_html(html: str) -> Dict[str, object]:
 			if cells:
 				rows.append(cells)
 
-		if not rows:
+		# 2. Ignore tables with fewer than 2 rows
+		if len(rows) < 2:
+			continue
+
+		# 3. Ignore tables where every row contains only a single cell (often lists or layout elements)
+		if all(len(row) == 1 for row in rows):
 			continue
 
 		table_key = tuple(tuple(row) for row in rows)

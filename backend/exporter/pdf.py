@@ -2,7 +2,7 @@ from typing import Any, Dict
 from xml.sax.saxutils import escape
 
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
+from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle, LongTable
 from reportlab.lib import colors
 
 
@@ -109,7 +109,7 @@ def export_to_pdf(data: Dict[str, Any], filename: str = "report.pdf") -> None:
 						row.append(Paragraph("", cell_style))
 
 				col_width = 460.0 / max_cols if max_cols > 0 else 100.0
-				t = Table(formatted_rows, colWidths=[col_width] * max_cols)
+				t = LongTable(formatted_rows, colWidths=[col_width] * max_cols, repeatRows=1)
 				t.setStyle(TableStyle([
 					('BACKGROUND', (0, 0), (-1, 0), colors.HexColor("#0f9d8b")),
 					('ALIGN', (0, 0), (-1, -1), 'LEFT'),
@@ -133,3 +133,4 @@ def export_to_pdf(data: Dict[str, Any], filename: str = "report.pdf") -> None:
 		print("PDF report generated")
 	except Exception as error:
 		print(f"Failed to generate PDF report: {error}")
+		raise error

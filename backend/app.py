@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
-from fastapi import FastAPI, HTTPException
+import os
+import uuid
+from fastapi import FastAPI, HTTPException, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from pydantic import BaseModel, HttpUrl
@@ -68,8 +70,17 @@ def scrape_endpoint(payload: ScrapeRequest):
 	return result
 
 
+def remove_temp_file(filepath: str):
+	"""Helper task to clean up temporary files after sending the response."""
+	try:
+		if os.path.exists(filepath):
+			os.remove(filepath)
+	except Exception as err:
+		print(f"Warning: Failed to remove temporary file {filepath}: {err}")
+
+
 @app.post("/download/csv")
-def download_csv(payload: ScrapeRequest):
+def download_csv(payload: ScrapeRequest, background_tasks: BackgroundTasks):
 	"""Download scraped links as a CSV file."""
 	url_str = str(payload.url)
 	try:
@@ -81,12 +92,21 @@ def download_csv(payload: ScrapeRequest):
 		raise HTTPException(status_code=502, detail="Scraping failed: Unable to fetch or process URL.")
 
 	scrape_cache[url_str] = result
-	export_to_csv(result)
-	return FileResponse("links.csv", media_type="text/csv", filename="data.csv")
+	
+	links_fn = f"links_{uuid.uuid4().hex}.csv"
+	tables_fn = f"tables_{uuid.uuid4().hex}.csv"
+	try:
+		export_to_csv(result, links_filename=links_fn, tables_filename=tables_fn)
+	except Exception as exc:
+		raise HTTPException(status_code=500, detail=f"CSV generation failed: {exc}") from exc
+
+	background_tasks.add_task(remove_temp_file, links_fn)
+	background_tasks.add_task(remove_temp_file, tables_fn)
+	return FileResponse(links_fn, media_type="text/csv", filename="data.csv")
 
 
 @app.post("/download/tables-csv")
-def download_tables_csv(payload: ScrapeRequest):
+def download_tables_csv(payload: ScrapeRequest, background_tasks: BackgroundTasks):
 	"""Download scraped tables as a CSV file."""
 	url_str = str(payload.url)
 	try:
@@ -98,12 +118,21 @@ def download_tables_csv(payload: ScrapeRequest):
 		raise HTTPException(status_code=502, detail="Scraping failed: Unable to fetch or process URL.")
 
 	scrape_cache[url_str] = result
-	export_to_csv(result)
-	return FileResponse("tables.csv", media_type="text/csv", filename="tables.csv")
+	
+	links_fn = f"links_{uuid.uuid4().hex}.csv"
+	tables_fn = f"tables_{uuid.uuid4().hex}.csv"
+	try:
+		export_to_csv(result, links_filename=links_fn, tables_filename=tables_fn)
+	except Exception as exc:
+		raise HTTPException(status_code=500, detail=f"CSV generation failed: {exc}") from exc
+
+	background_tasks.add_task(remove_temp_file, links_fn)
+	background_tasks.add_task(remove_temp_file, tables_fn)
+	return FileResponse(tables_fn, media_type="text/csv", filename="tables.csv")
 
 
 @app.post("/download/pdf")
-def download_pdf(payload: ScrapeRequest):
+def download_pdf(payload: ScrapeRequest, background_tasks: BackgroundTasks):
 	"""Download scraped data as a PDF report."""
 	url_str = str(payload.url)
 	try:
@@ -115,8 +144,15 @@ def download_pdf(payload: ScrapeRequest):
 		raise HTTPException(status_code=502, detail="Scraping failed: Unable to fetch or process URL.")
 
 	scrape_cache[url_str] = result
-	export_to_pdf(result)
-	return FileResponse("report.pdf", media_type="application/pdf", filename="data.pdf")
+	
+	pdf_fn = f"report_{uuid.uuid4().hex}.pdf"
+	try:
+		export_to_pdf(result, pdf_fn)
+	except Exception as exc:
+		raise HTTPException(status_code=500, detail=f"PDF generation failed: {exc}") from exc
+
+	background_tasks.add_task(remove_temp_file, pdf_fn)
+	return FileResponse(pdf_fn, media_type="application/pdf", filename="data.pdf")
 
 
 if __name__ == "__main__":
