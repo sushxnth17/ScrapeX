@@ -91,21 +91,26 @@ def extract_basic(html: str) -> Optional[Dict[str, str]]:
         title_tag = soup.find('title')
         title = title_tag.text.strip() if title_tag else "Untitled"
         
-        # Extract all paragraph text
+        # Extract and filter all paragraph text (>50 characters)
         paragraphs = soup.find_all('p')
-        text_blocks = [p.get_text(strip=True) for p in paragraphs if len(p.get_text(strip=True)) > 50]
-        text = ' '.join(text_blocks)
+        text_blocks = []
+        for p in paragraphs:
+            p_text = p.get_text(strip=True)
+            if len(p_text) > 50:
+                text_blocks.append(p_text)
 
         if not text_blocks:
             return None
-        
+
+        text = ' '.join(text_blocks)
+
         # Validate text
-        if not text or len(text.strip()) < MIN_TEXT_LENGTH:
+        if len(text) < MIN_TEXT_LENGTH:
             return None
-        
+
         return {
             "title": title,
-            "text": text.strip()
+            "text": text
         }
         
     except Exception as e:
