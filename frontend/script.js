@@ -10,6 +10,7 @@ const paragraphsEl = document.getElementById("stat-paragraphs");
 const linksEl = document.getElementById("stat-links");
 const tablesEl = document.getElementById("stat-tables");
 const previewEl = document.getElementById("content-preview");
+const tablesContainer = document.getElementById("extracted-tables-container");
 
 // Helper to format error messages (handles Pydantic arrays and custom details)
 function getErrorMessage(data, fallbackMsg) {
@@ -77,6 +78,44 @@ form.addEventListener("submit", async (e) => {
 		previewEl.textContent = data.clean_text
 			? data.clean_text.slice(0, 300) + "..."
 			: "No preview available";
+
+		// Render Extracted Tables
+		tablesContainer.innerHTML = "";
+		if (data.tables && data.tables.length > 0) {
+			data.tables.forEach((tableData, index) => {
+				const wrapper = document.createElement("div");
+				wrapper.className = "table-wrapper";
+
+				const tableEl = document.createElement("table");
+				tableEl.className = "scraped-table";
+
+				tableData.forEach((row, rowIndex) => {
+					const tr = document.createElement("tr");
+					row.forEach(cell => {
+						const cellEl = document.createElement(rowIndex === 0 ? "th" : "td");
+						cellEl.textContent = cell;
+						tr.appendChild(cellEl);
+					});
+					tableEl.appendChild(tr);
+				});
+
+				wrapper.appendChild(tableEl);
+				
+				const titleDiv = document.createElement("h4");
+				titleDiv.textContent = `Table ${index + 1}:`;
+				titleDiv.style.margin = "14px 0 6px 0";
+				titleDiv.style.color = "var(--ink)";
+				titleDiv.style.fontFamily = "'Syne', 'Segoe UI', sans-serif";
+				
+				tablesContainer.appendChild(titleDiv);
+				tablesContainer.appendChild(wrapper);
+			});
+		} else {
+			const noTables = document.createElement("p");
+			noTables.className = "no-tables-msg";
+			noTables.textContent = "No tables found on this page.";
+			tablesContainer.appendChild(noTables);
+		}
 
 	} catch (error) {
 		console.error(error);
