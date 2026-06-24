@@ -85,13 +85,18 @@ form.addEventListener("submit", async (e) => {
 	}
 });
 
-async function downloadFile(endpoint, filename) {
+async function downloadFile(endpoint, filename, buttonEl) {
 	const url = document.getElementById("url-input").value;
 
 	if (!url) {
 		alert("Please enter a URL first");
 		return;
 	}
+
+	const originalText = buttonEl.textContent;
+	const isPdf = filename.toLowerCase().endsWith(".pdf");
+	buttonEl.textContent = isPdf ? "Downloading PDF..." : "Downloading CSV...";
+	buttonEl.disabled = true;
 
 	try {
 		const response = await fetch(`${API_BASE_URL}${endpoint}`, {
@@ -120,18 +125,21 @@ async function downloadFile(endpoint, filename) {
 	} catch (error) {
 		console.error(error);
 		alert(`Cannot connect to backend at ${API_BASE_URL}. Make sure the API server is running.`);
+	} finally {
+		buttonEl.textContent = originalText;
+		buttonEl.disabled = false;
 	}
 }
 
 // Download handlers
 csvBtn.addEventListener("click", () => {
-	downloadFile("/download/csv", "data.csv");
+	downloadFile("/download/csv", "data.csv", csvBtn);
 });
 
 tablesBtn.addEventListener("click", () => {
-	downloadFile("/download/tables-csv", "tables.csv");
+	downloadFile("/download/tables-csv", "tables.csv", tablesBtn);
 });
 
 pdfBtn.addEventListener("click", () => {
-	downloadFile("/download/pdf", "data.pdf");
+	downloadFile("/download/pdf", "data.pdf", pdfBtn);
 });
