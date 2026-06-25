@@ -9,6 +9,7 @@ from playwright.sync_api import sync_playwright
 
 
 MIN_HTML_LENGTH = 500
+LAST_FETCH_METHOD = "Unknown"
 DEFAULT_USER_AGENT = (
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
     "AppleWebKit/537.36 (KHTML, like Gecko) "
@@ -124,6 +125,8 @@ def fetch_html(url: str) -> Optional[str]:
     Returns:
         HTML text if successful, None otherwise
     """
+    global LAST_FETCH_METHOD
+    LAST_FETCH_METHOD = "Unknown"
     # Validate URL
     if not url.startswith("http"):
         print("Invalid URL. Please include http/https")
@@ -132,6 +135,7 @@ def fetch_html(url: str) -> Optional[str]:
     html = fetch_with_requests(url)
     if html:
         print("Fetched using requests")
+        LAST_FETCH_METHOD = "Requests"
         return html
     
     # Fallback to Playwright for JS-heavy sites
@@ -139,6 +143,7 @@ def fetch_html(url: str) -> Optional[str]:
     html = fetch_with_playwright(url)
     if html:
         print("Fetched using Playwright")
+        LAST_FETCH_METHOD = "Playwright"
         return html
     
     print("Error: Failed to fetch content from both methods")

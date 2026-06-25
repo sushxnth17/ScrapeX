@@ -11,6 +11,7 @@ const linksEl = document.getElementById("stat-links");
 const tablesEl = document.getElementById("stat-tables");
 const previewEl = document.getElementById("content-preview");
 const tablesContainer = document.getElementById("extracted-tables-container");
+const linksContainer = document.getElementById("extracted-links-container");
 
 // Helper to format error messages (handles Pydantic arrays and custom details)
 function getErrorMessage(data, fallbackMsg) {
@@ -115,6 +116,66 @@ form.addEventListener("submit", async (e) => {
 			noTables.className = "no-tables-msg";
 			noTables.textContent = "No tables found on this page.";
 			tablesContainer.appendChild(noTables);
+		}
+
+		// Render Extracted Links
+		linksContainer.innerHTML = "";
+		const uniqueLinksMap = new Map();
+		
+		if (data.links && data.links.length > 0) {
+			for (const link of data.links) {
+				const url = (link.href || "").trim();
+				if (!url) continue;
+
+				const text = (link.text || "").trim();
+				if (!uniqueLinksMap.has(url)) {
+					uniqueLinksMap.set(url, text);
+				} else {
+					const existingText = uniqueLinksMap.get(url);
+					if (!existingText && text) {
+						uniqueLinksMap.set(url, text);
+					}
+				}
+			}
+		}
+
+		const uniqueLinks = Array.from(uniqueLinksMap.entries()).map(([href, text]) => ({ href, text }));
+
+		if (uniqueLinks.length > 0) {
+			if (uniqueLinks.length > 100) {
+				const limitMsg = document.createElement("p");
+				limitMsg.className = "links-limit-msg";
+				limitMsg.textContent = "Showing first 100 links.";
+				linksContainer.appendChild(limitMsg);
+			}
+
+			const displayLinks = uniqueLinks.slice(0, 100);
+			displayLinks.forEach(link => {
+				const linkEl = document.createElement("a");
+				linkEl.className = "link-item";
+				linkEl.href = link.href;
+				linkEl.target = "_blank";
+				linkEl.rel = "noopener noreferrer";
+
+				const titleSpan = document.createElement("span");
+				titleSpan.className = "link-title";
+				titleSpan.textContent = link.text || link.href;
+				linkEl.appendChild(titleSpan);
+
+				if (link.text && link.text !== link.href) {
+					const urlSpan = document.createElement("span");
+					urlSpan.className = "link-url";
+					urlSpan.textContent = link.href;
+					linkEl.appendChild(urlSpan);
+				}
+
+				linksContainer.appendChild(linkEl);
+			});
+		} else {
+			const noLinks = document.createElement("p");
+			noLinks.className = "no-links-msg";
+			noLinks.textContent = "No links found on this page.";
+			linksContainer.appendChild(noLinks);
 		}
 
 	} catch (error) {
