@@ -7,26 +7,29 @@
 	<link rel="stylesheet" href="style.css" />
 </head>
 <body>
-	<header>
-		<h1>ScrapeX</h1>
-		<p>Turn any website into structured data</p>
-	</header>
-
 	<main>
-		<section aria-labelledby="scrape-form-title">
-			<h2 id="scrape-form-title">Start Scraping</h2>
-			<form id="scrape-form" novalidate>
-				<label for="url-input">Website URL</label>
-				<input
-					id="url-input"
-					name="url"
-					type="url"
-					placeholder="https://example.com"
-					required
-				/>
-				<button type="submit">Scrape</button>
-			</form>
-			<p id="loading-message" role="status" aria-live="polite"></p>
+		<section class="hero-section" aria-labelledby="hero-title">
+			<div class="hero-left">
+				<div class="logo-badge">🚀 ScrapeX</div>
+				<h1 id="hero-title">ScrapeX</h1>
+				<p class="hero-subtitle">Turn any website into structured data</p>
+			</div>
+			<div class="hero-right">
+				<form id="scrape-form" novalidate>
+					<label for="url-input">Website URL</label>
+					<div class="input-wrapper">
+						<input
+							id="url-input"
+							name="url"
+							type="url"
+							placeholder="https://example.com"
+							required
+						/>
+						<button type="submit">Scrape</button>
+					</div>
+				</form>
+				<p id="loading-message" role="status" aria-live="polite"></p>
+			</div>
 		</section>
 
 		<section id="results" aria-labelledby="results-title">
