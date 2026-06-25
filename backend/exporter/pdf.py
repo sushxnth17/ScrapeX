@@ -92,7 +92,10 @@ def export_to_pdf(data: Dict[str, Any], filename: str = "report.pdf") -> None:
 					continue
 				formatted_row = []
 				for cell in row:
-					cell_text = escape(str(cell or "").strip())
+					text_str = str(cell or "").strip()
+					if len(text_str) > 200:
+						text_str = text_str[:197] + "..."
+					cell_text = escape(text_str)
 					style = header_style if r_idx == 0 else cell_style
 					formatted_row.append(Paragraph(cell_text, style))
 				if formatted_row:
@@ -102,14 +105,42 @@ def export_to_pdf(data: Dict[str, Any], filename: str = "report.pdf") -> None:
 				continue
 
 			try:
-				max_cols = max(len(row) for row in formatted_rows)
-				# Pad short rows
+				# 1. Pad rows to raw_max_cols first so we can analyze columns
+				raw_max_cols = max(len(row) for row in formatted_rows)
+				padded_rows = []
 				for row in formatted_rows:
-					while len(row) < max_cols:
-						row.append(Paragraph("", cell_style))
+					padded_row = list(row)
+					while len(padded_row) < raw_max_cols:
+						padded_row.append(Paragraph("", cell_style))
+					padded_rows.append(padded_row)
 
+				# 2. Find columns that are not completely empty across all rows
+				active_col_indices = []
+				for col_idx in range(raw_max_cols):
+					col_has_content = False
+					for row in padded_rows:
+						cell_text = row[col_idx].text.strip()
+						if cell_text:
+							col_has_content = True
+							break
+					if col_has_content:
+						active_col_indices.append(col_idx)
+
+				# 3. Limit to at most 8 active columns to ensure readability in portrait PDF
+				active_col_indices = active_col_indices[:8]
+
+				if not active_col_indices:
+					continue
+
+				# 4. Reconstruct rows keeping only active columns
+				final_rows = []
+				for row in padded_rows:
+					final_row = [row[idx] for idx in active_col_indices]
+					final_rows.append(final_row)
+
+				max_cols = len(active_col_indices)
 				col_width = 460.0 / max_cols if max_cols > 0 else 100.0
-				t = LongTable(formatted_rows, colWidths=[col_width] * max_cols, repeatRows=1)
+				t = LongTable(final_rows, colWidths=[col_width] * max_cols, repeatRows=1)
 				t.setStyle(TableStyle([
 					('BACKGROUND', (0, 0), (-1, 0), colors.HexColor("#0f9d8b")),
 					('ALIGN', (0, 0), (-1, -1), 'LEFT'),
