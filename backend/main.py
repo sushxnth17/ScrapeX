@@ -5,12 +5,12 @@ from __future__ import annotations
 from typing import Any, Dict, Optional
 
 try:
+    from . import fetcher
     from .extractor import extract_content
-    from .fetcher import fetch_html
     from .parser import parse_html
 except ImportError:
+    import fetcher
     from extractor import extract_content
-    from fetcher import fetch_html
     from parser import parse_html
 
 
@@ -34,7 +34,7 @@ def scrape(url: str) -> Optional[Dict[str, Any]]:
         stage fails.
     """
     print("Fetching...")
-    html = fetch_html(url)
+    html = fetcher.fetch_html(url)
     if html is None:
         print("Error: Failed to fetch HTML.")
         return None
@@ -72,6 +72,7 @@ def scrape(url: str) -> Optional[Dict[str, Any]]:
         "paragraphs": parsed.get("paragraphs", []),
         "links": parsed.get("links", []),
         "tables": parsed.get("tables", []),
+        "scrape_method": getattr(fetcher, "LAST_FETCH_METHOD", "Unknown"),
     }
 
     print("Done.")

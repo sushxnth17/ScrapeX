@@ -191,11 +191,17 @@ def export_to_pdf(data: Dict[str, Any], filename: str = "report.pdf") -> None:
 	story.append(Paragraph("ScrapeX Web Scraper Report", title_style))
 	story.append(Spacer(1, 10))
 
-	timestamp_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+	now = datetime.now()
+	date_str = now.strftime("%Y-%m-%d")
+	time_str = now.strftime("%H:%M:%S")
+	scrape_method = str(data.get("scrape_method") or "Unknown")
+
 	meta_data = [
 		[Paragraph("Website Title:", meta_label_style), Paragraph(escape(title), meta_value_style)],
 		[Paragraph("Source URL:", meta_label_style), Paragraph(escape(url), meta_value_style)],
-		[Paragraph("Generated At:", meta_label_style), Paragraph(timestamp_str, meta_value_style)]
+		[Paragraph("Generated Date:", meta_label_style), Paragraph(date_str, meta_value_style)],
+		[Paragraph("Generated Time:", meta_label_style), Paragraph(time_str, meta_value_style)],
+		[Paragraph("Scrape Method:", meta_label_style), Paragraph(scrape_method, meta_value_style)]
 	]
 	
 	# Total printable width is 504 (612 page width - 108 margins)
@@ -225,11 +231,11 @@ def export_to_pdf(data: Dict[str, Any], filename: str = "report.pdf") -> None:
 
 	summary_data = [
 		[Paragraph("<b>Statistic</b>", meta_label_style), Paragraph("<b>Value</b>", meta_label_style)],
-		[Paragraph("Content Length (characters)", body_style), Paragraph(str(len(clean_text)), body_style)],
-		[Paragraph("Heading Count", body_style), Paragraph(str(len(headings)), body_style)],
-		[Paragraph("Paragraph Count", body_style), Paragraph(str(len(data.get("paragraphs") or [])), body_style)],
-		[Paragraph("Link Count", body_style), Paragraph(str(len(data.get("links") or [])), body_style)],
-		[Paragraph("Table Count", body_style), Paragraph(str(len(tables)), body_style)]
+		[Paragraph("Total Content Length (characters)", body_style), Paragraph(str(len(clean_text)), body_style)],
+		[Paragraph("Number of Headings", body_style), Paragraph(str(len(headings)), body_style)],
+		[Paragraph("Number of Paragraphs", body_style), Paragraph(str(len(data.get("paragraphs") or [])), body_style)],
+		[Paragraph("Number of Links", body_style), Paragraph(str(len(data.get("links") or [])), body_style)],
+		[Paragraph("Number of Tables", body_style), Paragraph(str(len(tables)), body_style)]
 	]
 	summary_table = Table(summary_data, colWidths=[252, 252])
 	summary_table.setStyle(TableStyle([
@@ -242,7 +248,9 @@ def export_to_pdf(data: Dict[str, Any], filename: str = "report.pdf") -> None:
 		('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, bg_color])
 	]))
 	story.append(summary_table)
-	story.append(Spacer(1, 15))
+	
+	# Dedicated report summary cover page (push preview and tables to page 2+)
+	story.append(PageBreak())
 
 	# ----------------------------------------------------
 	# 3. Content Preview
