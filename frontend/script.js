@@ -80,6 +80,25 @@ form.addEventListener("submit", async (e) => {
 			? data.clean_text.slice(0, 300) + "..."
 			: "No preview available";
 
+		// Render Extracted Headings
+		const headingsContainer = document.getElementById("extracted-headings-container");
+		if (headingsContainer) {
+			headingsContainer.innerHTML = "";
+			if (data.headings && data.headings.length > 0) {
+				data.headings.forEach(heading => {
+					const headingEl = document.createElement("div");
+					headingEl.className = "heading-item";
+					headingEl.textContent = heading;
+					headingsContainer.appendChild(headingEl);
+				});
+			} else {
+				const noHeadings = document.createElement("p");
+				noHeadings.className = "no-headings-msg";
+				noHeadings.textContent = "No headings found on this page.";
+				headingsContainer.appendChild(noHeadings);
+			}
+		}
+
 		// Render Extracted Tables
 		tablesContainer.innerHTML = "";
 		if (data.tables && data.tables.length > 0) {
@@ -242,4 +261,33 @@ tablesBtn.addEventListener("click", () => {
 
 pdfBtn.addEventListener("click", () => {
 	downloadFile("/download/pdf", "data.pdf", pdfBtn);
+});
+
+// Tab switching logic
+const tabButtons = document.querySelectorAll(".tab-btn");
+const tabPanels = document.querySelectorAll(".tab-panel");
+
+tabButtons.forEach(btn => {
+	btn.addEventListener("click", () => {
+		// Deactivate all tab buttons
+		tabButtons.forEach(b => {
+			b.classList.remove("active");
+			b.setAttribute("aria-selected", "false");
+		});
+		// Hide all tab panels
+		tabPanels.forEach(p => {
+			p.classList.remove("active");
+		});
+
+		// Activate the selected tab button
+		btn.classList.add("active");
+		btn.setAttribute("aria-selected", "true");
+
+		// Show the corresponding tab panel
+		const panelId = btn.getAttribute("aria-controls");
+		const panel = document.getElementById(panelId);
+		if (panel) {
+			panel.classList.add("active");
+		}
+	});
 });

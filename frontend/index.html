@@ -1,32 +1,31 @@
 <!doctype html>
 <html lang="en">
+
 <head>
 	<meta charset="UTF-8" />
 	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 	<title>ScrapeX</title>
-	<link rel="stylesheet" href="style.css" />
+	<link rel="stylesheet" href="style.css?v=2" />
 </head>
-<body>
-	<header>
-		<h1>ScrapeX</h1>
-		<p>Turn any website into structured data</p>
-	</header>
 
+<body>
 	<main>
-		<section aria-labelledby="scrape-form-title">
-			<h2 id="scrape-form-title">Start Scraping</h2>
-			<form id="scrape-form" novalidate>
-				<label for="url-input">Website URL</label>
-				<input
-					id="url-input"
-					name="url"
-					type="url"
-					placeholder="https://example.com"
-					required
-				/>
-				<button type="submit">Scrape</button>
-			</form>
-			<p id="loading-message" role="status" aria-live="polite"></p>
+		<section class="hero-section" aria-labelledby="hero-title">
+			<div class="hero-left">
+				<div class="logo-badge"> ScrapeX</div>
+				<h1 id="hero-title">ScrapeX</h1>
+				<p class="hero-subtitle">Turn any website into structured data</p>
+			</div>
+			<div class="hero-right">
+				<form id="scrape-form" novalidate>
+					<label for="url-input">Website URL</label>
+					<div class="input-wrapper">
+						<input id="url-input" name="url" type="url" placeholder="https://example.com" required />
+						<button type="submit">Scrape</button>
+					</div>
+				</form>
+				<p id="loading-message" role="status" aria-live="polite"></p>
+			</div>
 		</section>
 
 		<section id="results" aria-labelledby="results-title">
@@ -39,48 +38,142 @@
 
 			<article aria-labelledby="stats-label">
 				<h3 id="stats-label">Content Stats</h3>
-				<dl>
-					<div>
-						<dt>Length</dt>
-						<dd id="stat-length">0</dd>
+				<div class="stats-grid">
+					<!-- Card 1: Content Length -->
+					<div class="metric-card">
+						<div class="metric-header">
+							<div class="metric-icon-box length-icon">
+								<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="metric-icon">
+									<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+									<polyline points="14 2 14 8 20 8"></polyline>
+									<line x1="16" y1="13" x2="8" y2="13"></line>
+									<line x1="16" y1="17" x2="8" y2="17"></line>
+									<polyline points="10 9 9 9 8 9"></polyline>
+								</svg>
+							</div>
+							<span class="metric-label">Content Length</span>
+						</div>
+						<div class="metric-body">
+							<span class="metric-number" id="stat-length">0</span>
+							<span class="metric-caption">Total characters extracted</span>
+						</div>
 					</div>
-					<div>
-						<dt>Headings</dt>
-						<dd id="stat-headings">0</dd>
-					</div>
-					<div>
-						<dt>Paragraphs</dt>
-						<dd id="stat-paragraphs">0</dd>
-					</div>
-					<div>
-						<dt>Links</dt>
-						<dd id="stat-links">0</dd>
-					</div>
-					<div>
-						<dt>Tables</dt>
-						<dd id="stat-tables">0</dd>
-					</div>
-				</dl>
-			</article>
 
-			<article aria-labelledby="preview-label">
-				<h3 id="preview-label">Content Preview</h3>
-				<pre id="content-preview">Scraped content preview will appear here.</pre>
-			</article>
+					<!-- Card 2: Headings -->
+					<div class="metric-card">
+						<div class="metric-header">
+							<div class="metric-icon-box headings-icon">
+								<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="metric-icon">
+									<path d="M4 12h16"></path>
+									<path d="M4 18V6"></path>
+									<path d="M20 18V6"></path>
+								</svg>
+							</div>
+							<span class="metric-label">Headings</span>
+						</div>
+						<div class="metric-body">
+							<span class="metric-number" id="stat-headings">0</span>
+							<span class="metric-caption">Structural headings found</span>
+						</div>
+					</div>
 
-			<article aria-labelledby="tables-label">
-				<h3 id="tables-label">Extracted Tables</h3>
-				<div id="extracted-tables-container">
-					<p class="no-tables-msg">Scraped tables will appear here.</p>
+					<!-- Card 3: Paragraphs -->
+					<div class="metric-card">
+						<div class="metric-header">
+							<div class="metric-icon-box paragraphs-icon">
+								<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="metric-icon">
+									<line x1="17" y1="10" x2="3" y2="10"></line>
+									<line x1="21" y1="6" x2="3" y2="6"></line>
+									<line x1="21" y1="14" x2="3" y2="14"></line>
+									<line x1="17" y1="18" x2="3" y2="18"></line>
+								</svg>
+							</div>
+							<span class="metric-label">Paragraphs</span>
+						</div>
+						<div class="metric-body">
+							<span class="metric-number" id="stat-paragraphs">0</span>
+							<span class="metric-caption">Text paragraph blocks</span>
+						</div>
+					</div>
+
+					<!-- Card 4: Links -->
+					<div class="metric-card">
+						<div class="metric-header">
+							<div class="metric-icon-box links-icon">
+								<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="metric-icon">
+									<path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+									<path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+								</svg>
+							</div>
+							<span class="metric-label">Links</span>
+						</div>
+						<div class="metric-body">
+							<span class="metric-number" id="stat-links">0</span>
+							<span class="metric-caption">Internal & external links</span>
+						</div>
+					</div>
+
+					<!-- Card 5: Tables -->
+					<div class="metric-card">
+						<div class="metric-header">
+							<div class="metric-icon-box tables-icon">
+								<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="metric-icon">
+									<rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+									<line x1="3" y1="9" x2="21" y2="9"></line>
+									<line x1="3" y1="15" x2="21" y2="15"></line>
+									<line x1="12" y1="3" x2="12" y2="21"></line>
+								</svg>
+							</div>
+							<span class="metric-label">Tables</span>
+						</div>
+						<div class="metric-body">
+							<span class="metric-number" id="stat-tables">0</span>
+							<span class="metric-caption">Extracted data tables</span>
+						</div>
+					</div>
 				</div>
 			</article>
 
-			<article aria-labelledby="links-label">
-				<h3 id="links-label">Extracted Links</h3>
-				<div id="extracted-links-container">
-					<p class="no-links-msg">Scraped links will appear here.</p>
-				</div>
-			</article>
+			<!-- Tabs Navigation -->
+			<div class="tabs-nav" role="tablist">
+				<button type="button" class="tab-btn active" role="tab" aria-selected="true" aria-controls="preview-panel">Content Preview</button>
+				<button type="button" class="tab-btn" role="tab" aria-selected="false" aria-controls="headings-panel">Headings</button>
+				<button type="button" class="tab-btn" role="tab" aria-selected="false" aria-controls="links-panel">Links</button>
+				<button type="button" class="tab-btn" role="tab" aria-selected="false" aria-controls="tables-panel">Tables</button>
+			</div>
+
+			<!-- Tab Panels -->
+			<div class="tab-panels">
+				<!-- Panel 1: Content Preview -->
+				<article id="preview-panel" class="tab-panel active" aria-labelledby="preview-label" role="tabpanel">
+					<h3 id="preview-label">Content Preview</h3>
+					<pre id="content-preview">Scraped content preview will appear here.</pre>
+				</article>
+
+				<!-- Panel 2: Headings -->
+				<article id="headings-panel" class="tab-panel" aria-labelledby="headings-label" role="tabpanel">
+					<h3 id="headings-label">Extracted Headings</h3>
+					<div id="extracted-headings-container">
+						<p class="no-headings-msg">Scraped headings will appear here.</p>
+					</div>
+				</article>
+
+				<!-- Panel 3: Links -->
+				<article id="links-panel" class="tab-panel" aria-labelledby="links-label" role="tabpanel">
+					<h3 id="links-label">Extracted Links</h3>
+					<div id="extracted-links-container">
+						<p class="no-links-msg">Scraped links will appear here.</p>
+					</div>
+				</article>
+
+				<!-- Panel 4: Tables -->
+				<article id="tables-panel" class="tab-panel" aria-labelledby="tables-label" role="tabpanel">
+					<h3 id="tables-label">Extracted Tables</h3>
+					<div id="extracted-tables-container">
+						<p class="no-tables-msg">Scraped tables will appear here.</p>
+					</div>
+				</article>
+			</div>
 
 			<section aria-label="Export Options">
 				<button id="download-csv" type="button">Download CSV</button>
@@ -92,4 +185,5 @@
 
 	<script src="script.js"></script>
 </body>
+
 </html>
