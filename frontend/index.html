@@ -1,16 +1,18 @@
 <!doctype html>
 <html lang="en">
+
 <head>
 	<meta charset="UTF-8" />
 	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 	<title>ScrapeX</title>
-	<link rel="stylesheet" href="style.css?v=1" />
+	<link rel="stylesheet" href="style.css?v=2" />
 </head>
+
 <body>
 	<main>
 		<section class="hero-section" aria-labelledby="hero-title">
 			<div class="hero-left">
-				<div class="logo-badge">🚀 ScrapeX</div>
+				<div class="logo-badge"> ScrapeX</div>
 				<h1 id="hero-title">ScrapeX</h1>
 				<p class="hero-subtitle">Turn any website into structured data</p>
 			</div>
@@ -18,13 +20,7 @@
 				<form id="scrape-form" novalidate>
 					<label for="url-input">Website URL</label>
 					<div class="input-wrapper">
-						<input
-							id="url-input"
-							name="url"
-							type="url"
-							placeholder="https://example.com"
-							required
-						/>
+						<input id="url-input" name="url" type="url" placeholder="https://example.com" required />
 						<button type="submit">Scrape</button>
 					</div>
 				</form>
@@ -138,24 +134,46 @@
 				</div>
 			</article>
 
-			<article aria-labelledby="preview-label">
-				<h3 id="preview-label">Content Preview</h3>
-				<pre id="content-preview">Scraped content preview will appear here.</pre>
-			</article>
+			<!-- Tabs Navigation -->
+			<div class="tabs-nav" role="tablist">
+				<button type="button" class="tab-btn active" role="tab" aria-selected="true" aria-controls="preview-panel">Content Preview</button>
+				<button type="button" class="tab-btn" role="tab" aria-selected="false" aria-controls="headings-panel">Headings</button>
+				<button type="button" class="tab-btn" role="tab" aria-selected="false" aria-controls="links-panel">Links</button>
+				<button type="button" class="tab-btn" role="tab" aria-selected="false" aria-controls="tables-panel">Tables</button>
+			</div>
 
-			<article aria-labelledby="tables-label">
-				<h3 id="tables-label">Extracted Tables</h3>
-				<div id="extracted-tables-container">
-					<p class="no-tables-msg">Scraped tables will appear here.</p>
-				</div>
-			</article>
+			<!-- Tab Panels -->
+			<div class="tab-panels">
+				<!-- Panel 1: Content Preview -->
+				<article id="preview-panel" class="tab-panel active" aria-labelledby="preview-label" role="tabpanel">
+					<h3 id="preview-label">Content Preview</h3>
+					<pre id="content-preview">Scraped content preview will appear here.</pre>
+				</article>
 
-			<article aria-labelledby="links-label">
-				<h3 id="links-label">Extracted Links</h3>
-				<div id="extracted-links-container">
-					<p class="no-links-msg">Scraped links will appear here.</p>
-				</div>
-			</article>
+				<!-- Panel 2: Headings -->
+				<article id="headings-panel" class="tab-panel" aria-labelledby="headings-label" role="tabpanel">
+					<h3 id="headings-label">Extracted Headings</h3>
+					<div id="extracted-headings-container">
+						<p class="no-headings-msg">Scraped headings will appear here.</p>
+					</div>
+				</article>
+
+				<!-- Panel 3: Links -->
+				<article id="links-panel" class="tab-panel" aria-labelledby="links-label" role="tabpanel">
+					<h3 id="links-label">Extracted Links</h3>
+					<div id="extracted-links-container">
+						<p class="no-links-msg">Scraped links will appear here.</p>
+					</div>
+				</article>
+
+				<!-- Panel 4: Tables -->
+				<article id="tables-panel" class="tab-panel" aria-labelledby="tables-label" role="tabpanel">
+					<h3 id="tables-label">Extracted Tables</h3>
+					<div id="extracted-tables-container">
+						<p class="no-tables-msg">Scraped tables will appear here.</p>
+					</div>
+				</article>
+			</div>
 
 			<section aria-label="Export Options">
 				<button id="download-csv" type="button">Download CSV</button>
@@ -167,4 +185,5 @@
 
 	<script src="script.js"></script>
 </body>
+
 </html>
