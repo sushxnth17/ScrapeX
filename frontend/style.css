@@ -301,37 +301,120 @@ button[type="submit"]:hover {
 }
 
 /* Summary Statistics Cards Grid */
-dl {
-  margin: 15px 0 0;
+/* Summary Statistics Cards Grid */
+.stats-grid {
+  margin-top: 15px;
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  grid-template-columns: repeat(5, 1fr);
   gap: 16px;
 }
 
-dl > div {
+@media (max-width: 760px) {
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 480px) {
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.metric-card {
   background-color: var(--card-color);
   border: 1px solid var(--line);
-  border-radius: var(--border-radius-sm);
+  border-radius: var(--border-radius);
   padding: 16px 12px;
-  text-align: center;
-  box-shadow: var(--button-shadow);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 16px;
+  box-shadow: var(--outer-shadow);
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+  height: 100%;
 }
 
-dt {
-  margin: 0;
+.metric-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--outer-shadow-hover);
+}
+
+.metric-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.metric-icon-box {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1px solid var(--line);
+  box-shadow: var(--inner-shadow);
+  flex-shrink: 0;
+}
+
+.metric-icon-box.length-icon {
+  color: var(--accent-indigo);
+  background-color: rgba(79, 70, 229, 0.08);
+}
+
+.metric-icon-box.headings-icon {
+  color: var(--accent-purple);
+  background-color: rgba(139, 92, 246, 0.08);
+}
+
+.metric-icon-box.paragraphs-icon {
+  color: var(--accent-teal);
+  background-color: rgba(13, 148, 136, 0.08);
+}
+
+.metric-icon-box.links-icon {
+  color: var(--accent-indigo);
+  background-color: rgba(79, 70, 229, 0.08);
+}
+
+.metric-icon-box.tables-icon {
+  color: var(--accent-red);
+  background-color: rgba(225, 29, 72, 0.08);
+}
+
+.metric-icon {
+  width: 18px;
+  height: 18px;
+}
+
+.metric-label {
   font-size: 0.72rem;
-  font-weight: 800;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
+  font-weight: 700;
   color: var(--text-secondary);
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
 }
 
-dd {
-  margin: 8px 0 0;
+.metric-body {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.metric-number {
   font-family: "Syne", "Segoe UI", sans-serif;
-  font-size: 1.4rem;
+  font-size: 1.8rem;
   font-weight: 800;
   color: var(--accent-indigo);
+  line-height: 1;
+}
+
+.metric-caption {
+  font-size: 0.72rem;
+  color: var(--text-light);
+  font-weight: 500;
+  line-height: 1.3;
 }
 
 /* ----------------------------------------------------

@@ -4,7 +4,7 @@
 	<meta charset="UTF-8" />
 	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 	<title>ScrapeX</title>
-	<link rel="stylesheet" href="style.css" />
+	<link rel="stylesheet" href="style.css?v=1" />
 </head>
 <body>
 	<main>
@@ -42,28 +42,100 @@
 
 			<article aria-labelledby="stats-label">
 				<h3 id="stats-label">Content Stats</h3>
-				<dl>
-					<div>
-						<dt>Length</dt>
-						<dd id="stat-length">0</dd>
+				<div class="stats-grid">
+					<!-- Card 1: Content Length -->
+					<div class="metric-card">
+						<div class="metric-header">
+							<div class="metric-icon-box length-icon">
+								<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="metric-icon">
+									<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+									<polyline points="14 2 14 8 20 8"></polyline>
+									<line x1="16" y1="13" x2="8" y2="13"></line>
+									<line x1="16" y1="17" x2="8" y2="17"></line>
+									<polyline points="10 9 9 9 8 9"></polyline>
+								</svg>
+							</div>
+							<span class="metric-label">Content Length</span>
+						</div>
+						<div class="metric-body">
+							<span class="metric-number" id="stat-length">0</span>
+							<span class="metric-caption">Total characters extracted</span>
+						</div>
 					</div>
-					<div>
-						<dt>Headings</dt>
-						<dd id="stat-headings">0</dd>
+
+					<!-- Card 2: Headings -->
+					<div class="metric-card">
+						<div class="metric-header">
+							<div class="metric-icon-box headings-icon">
+								<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="metric-icon">
+									<path d="M4 12h16"></path>
+									<path d="M4 18V6"></path>
+									<path d="M20 18V6"></path>
+								</svg>
+							</div>
+							<span class="metric-label">Headings</span>
+						</div>
+						<div class="metric-body">
+							<span class="metric-number" id="stat-headings">0</span>
+							<span class="metric-caption">Structural headings found</span>
+						</div>
 					</div>
-					<div>
-						<dt>Paragraphs</dt>
-						<dd id="stat-paragraphs">0</dd>
+
+					<!-- Card 3: Paragraphs -->
+					<div class="metric-card">
+						<div class="metric-header">
+							<div class="metric-icon-box paragraphs-icon">
+								<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="metric-icon">
+									<line x1="17" y1="10" x2="3" y2="10"></line>
+									<line x1="21" y1="6" x2="3" y2="6"></line>
+									<line x1="21" y1="14" x2="3" y2="14"></line>
+									<line x1="17" y1="18" x2="3" y2="18"></line>
+								</svg>
+							</div>
+							<span class="metric-label">Paragraphs</span>
+						</div>
+						<div class="metric-body">
+							<span class="metric-number" id="stat-paragraphs">0</span>
+							<span class="metric-caption">Text paragraph blocks</span>
+						</div>
 					</div>
-					<div>
-						<dt>Links</dt>
-						<dd id="stat-links">0</dd>
+
+					<!-- Card 4: Links -->
+					<div class="metric-card">
+						<div class="metric-header">
+							<div class="metric-icon-box links-icon">
+								<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="metric-icon">
+									<path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+									<path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+								</svg>
+							</div>
+							<span class="metric-label">Links</span>
+						</div>
+						<div class="metric-body">
+							<span class="metric-number" id="stat-links">0</span>
+							<span class="metric-caption">Internal & external links</span>
+						</div>
 					</div>
-					<div>
-						<dt>Tables</dt>
-						<dd id="stat-tables">0</dd>
+
+					<!-- Card 5: Tables -->
+					<div class="metric-card">
+						<div class="metric-header">
+							<div class="metric-icon-box tables-icon">
+								<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="metric-icon">
+									<rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+									<line x1="3" y1="9" x2="21" y2="9"></line>
+									<line x1="3" y1="15" x2="21" y2="15"></line>
+									<line x1="12" y1="3" x2="12" y2="21"></line>
+								</svg>
+							</div>
+							<span class="metric-label">Tables</span>
+						</div>
+						<div class="metric-body">
+							<span class="metric-number" id="stat-tables">0</span>
+							<span class="metric-caption">Extracted data tables</span>
+						</div>
 					</div>
-				</dl>
+				</div>
 			</article>
 
 			<article aria-labelledby="preview-label">
