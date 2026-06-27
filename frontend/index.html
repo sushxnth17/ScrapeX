@@ -5,7 +5,7 @@
 	<meta charset="UTF-8" />
 	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 	<title>ScrapeX</title>
-	<link rel="stylesheet" href="style.css?v=2" />
+	<link rel="stylesheet" href="style.css?v=3" />
 </head>
 
 <body>
@@ -30,6 +30,62 @@
 
 		<section id="results" aria-labelledby="results-title">
 			<h2 id="results-title">Results</h2>
+
+			<!-- AI Website Analysis Card -->
+			<article id="ai-analysis-card" aria-labelledby="ai-analysis-title">
+				<div class="ai-card-header">
+					<h3 id="ai-analysis-title">AI Website Analysis</h3>
+					<span id="ai-status-badge" class="ai-badge">Standby</span>
+				</div>
+				<div class="ai-grid">
+					<!-- Website Type -->
+					<div class="ai-metric-item">
+						<span class="ai-label">Website Type</span>
+						<span class="ai-value" id="ai-website-type">-</span>
+					</div>
+					<!-- Framework -->
+					<div class="ai-metric-item">
+						<span class="ai-label">Framework</span>
+						<span class="ai-value" id="ai-framework">-</span>
+					</div>
+					<!-- Content Confidence -->
+					<div class="ai-metric-item">
+						<span class="ai-label">Content Confidence</span>
+						<div class="ai-confidence-box">
+							<span class="ai-value" id="ai-content-confidence">0%</span>
+							<div class="ai-progress-bar"><div class="ai-progress-fill" id="ai-content-fill"></div></div>
+						</div>
+					</div>
+					<!-- Table Confidence -->
+					<div class="ai-metric-item">
+						<span class="ai-label">Table Confidence</span>
+						<div class="ai-confidence-box">
+							<span class="ai-value" id="ai-table-confidence">0%</span>
+							<div class="ai-progress-bar"><div class="ai-progress-fill" id="ai-table-fill"></div></div>
+						</div>
+					</div>
+					<!-- Requires JavaScript -->
+					<div class="ai-metric-item">
+						<span class="ai-label">Requires JavaScript</span>
+						<span class="ai-value-badge" id="ai-requires-js">-</span>
+					</div>
+					<!-- Recommended Strategy -->
+					<div class="ai-metric-item ai-grid-full">
+						<span class="ai-label">Recommended Strategy</span>
+						<span class="ai-value highlight-strategy" id="ai-strategy">-</span>
+					</div>
+					<!-- Summary -->
+					<div class="ai-metric-item ai-grid-full">
+						<span class="ai-label">Summary</span>
+						<p class="ai-text-block" id="ai-summary">Submit a URL to analyze web page architecture and intelligence features.</p>
+					</div>
+					<!-- Warnings -->
+					<div class="ai-metric-item ai-grid-full" id="ai-warnings-wrapper">
+						<span class="ai-label">Warnings</span>
+						<div class="ai-warnings-container" id="ai-warnings">None</div>
+					</div>
+				</div>
+			</article>
 
 			<article aria-labelledby="page-title-label">
 				<h3 id="page-title-label">Title</h3>
