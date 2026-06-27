@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import logging
+import re
 import time
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, Union
@@ -29,36 +30,41 @@ class AIAnalysis:
     Attributes:
         website_type (str): Categorization of the website (e.g., 'E-commerce', 'Blog', 'Documentation', 'News').
         framework (str): Detected web technology stack or framework (e.g., 'React', 'Next.js', 'WordPress', 'Unknown').
-        main_content_selector (str): Recommended CSS selector for extracting main body content.
-        table_confidence (float): Confidence score (0.0 to 1.0) regarding table data extraction accuracy.
         content_confidence (float): Confidence score (0.0 to 1.0) regarding textual content extraction accuracy.
+        table_confidence (float): Confidence score (0.0 to 1.0) regarding table data extraction accuracy.
         requires_javascript (bool): Flag indicating if dynamic JavaScript rendering (e.g., Playwright) is necessary.
-        scrape_strategy (str): Recommended strategy for optimal scraping performance and quality.
+        recommended_strategy (str): Recommended strategy for optimal scraping performance and quality.
         warnings (List[str]): Potential challenges or anti-scraping measures identified on the page.
         summary (str): Brief overview summary of the page architecture and structural layout.
+        main_content_selector (str): Optional/legacy CSS selector for extracting main body content.
     """
     website_type: str
     framework: str
-    main_content_selector: str
-    table_confidence: float
     content_confidence: float
+    table_confidence: float
     requires_javascript: bool
-    scrape_strategy: str
+    recommended_strategy: str
     warnings: List[str] = field(default_factory=list)
     summary: str = ""
+    main_content_selector: str = "body"
+
+    @property
+    def scrape_strategy(self) -> str:
+        """Backward-compatible alias for recommended_strategy."""
+        return self.recommended_strategy
 
     def to_dict(self) -> Dict[str, Any]:
         """Convert the dataclass instance into a JSON-serializable dictionary."""
         return {
             "website_type": self.website_type,
             "framework": self.framework,
-            "main_content_selector": self.main_content_selector,
-            "table_confidence": self.table_confidence,
             "content_confidence": self.content_confidence,
+            "table_confidence": self.table_confidence,
             "requires_javascript": self.requires_javascript,
-            "scrape_strategy": self.scrape_strategy,
+            "recommended_strategy": self.recommended_strategy,
             "warnings": self.warnings,
             "summary": self.summary,
+            "main_content_selector": self.main_content_selector,
         }
 
 
@@ -88,43 +94,49 @@ class AIAnalyzer:
         self.model = model
         self.timeout = timeout
 
-    def build_prompt(self, html: str, url: str) -> str:
+    def build_prompt(self, html: str, url: str, title: str = "") -> str:
         """
-        Construct a structured prompt for the LLM analyzing page architecture.
+        Construct a structured prompt for Groq to analyze web page architecture while minimizing hallucinations.
         
         Args:
             html (str): The raw or sanitized HTML content of the target web page.
             url (str): The destination URL of the web page.
+            title (str): The HTML page title. If empty, extracted from HTML snippet.
             
         Returns:
-            str: Formatted prompt containing structural instructions and schema expectations.
+            str: Formatted prompt instructing the LLM to output strict JSON according to schema.
         """
+        if not title and html:
+            match = re.search(r"<title[^>]*>(.*?)</title>", html, re.IGNORECASE | re.DOTALL)
+            if match:
+                title = match.group(1).strip()
+
         truncated_html = html[:8000] if len(html) > 8000 else html
 
-        prompt = f"""
-You are an expert web scraper and web architecture analyzer for ScrapeX.
-Analyze the following web page content and metadata, then provide architectural insights in strict JSON format.
+        prompt = f"""Target URL: {url}
+Page Title: {title if title else 'N/A'}
 
-Target URL: {url}
-
-HTML Snippet:
-```html
+HTML Snapshot:
 {truncated_html}
-```
 
-Please respond strictly with a valid JSON object matching this schema:
+Instructions:
+1. Analyze the provided page content and metadata objectively. Do NOT speculate or extrapolate facts not supported by the HTML or URL.
+2. If the frontend framework or technology cannot be confirmed via meta tags, script source tags, or DOM indicators, set "framework" to "Unknown".
+3. "content_confidence" and "table_confidence" must be numeric floating-point values between 0.0 and 1.0.
+4. "requires_javascript" must be a boolean (true or false).
+5. Output strictly raw JSON matching the exact schema below. Do NOT use markdown code blocks (e.g., do not use ```json ... ```), and do NOT provide explanations or conversating text before or after the JSON object.
+
+Required Schema:
 {{
-    "website_type": "<Type of website, e.g., News, E-commerce, Documentation, Blog>",
-    "framework": "<Detected frontend technology/framework, e.g., React, Next.js, WordPress, Static>",
-    "main_content_selector": "<Optimal CSS selector targeting primary content>",
-    "table_confidence": <Float between 0.0 and 1.0 indicating confidence in structured tabular data presence>,
-    "content_confidence": <Float between 0.0 and 1.0 indicating confidence in main text extraction>,
-    "requires_javascript": <Boolean true/false if Client-Side Rendering/JS execution is essential>,
-    "scrape_strategy": "<Brief recommended scraping approach>",
-    "warnings": ["<List of potential scraping challenges or obstacles if any>"],
-    "summary": "<Short overview of page structure>"
-}}
-"""
+  "website_type": "",
+  "framework": "",
+  "content_confidence": 0.0,
+  "table_confidence": 0.0,
+  "requires_javascript": false,
+  "recommended_strategy": "",
+  "warnings": [],
+  "summary": ""
+}}"""
         return prompt.strip()
 
     def send_prompt(self, prompt: str, system_prompt: Optional[str] = None) -> str:
@@ -154,7 +166,11 @@ Please respond strictly with a valid JSON object matching this schema:
         }
 
         if system_prompt is None:
-            system_prompt = "You are a web architecture analyzer for ScrapeX. You must output valid JSON only."
+            system_prompt = (
+                "You are an objective web architecture analyzer for ScrapeX. "
+                "Your task is to analyze web page metadata and HTML to assess scraping strategy. "
+                "You must strictly output valid JSON matching the exact schema requested without any markdown formatting, preambles, or explanations."
+            )
 
         payload = {
             "model": self.model,
@@ -231,30 +247,33 @@ Please respond strictly with a valid JSON object matching this schema:
         else:
             raise ValueError(f"Unsupported response type for parsing: {type(response)}")
 
+        rec_strat = str(data.get("recommended_strategy") or data.get("scrape_strategy") or "Standard HTML parsing")
+
         return AIAnalysis(
             website_type=str(data.get("website_type", "Unknown")),
             framework=str(data.get("framework", "Unknown")),
-            main_content_selector=str(data.get("main_content_selector", "body")),
-            table_confidence=float(data.get("table_confidence", 0.0)),
             content_confidence=float(data.get("content_confidence", 0.0)),
+            table_confidence=float(data.get("table_confidence", 0.0)),
             requires_javascript=bool(data.get("requires_javascript", False)),
-            scrape_strategy=str(data.get("scrape_strategy", "Standard HTML parsing")),
+            recommended_strategy=rec_strat,
             warnings=list(data.get("warnings", [])),
             summary=str(data.get("summary", "")),
+            main_content_selector=str(data.get("main_content_selector", "body")),
         )
 
-    def analyze_page(self, html: str, url: str) -> AIAnalysis:
+    def analyze_page(self, html: str, url: str, title: str = "") -> AIAnalysis:
         """
         Execute full architectural analysis on a target web page using Groq AI.
         
         Args:
             html (str): Raw or processed HTML content of the web page.
             url (str): Target page URL.
+            title (str): Target page title.
             
         Returns:
             AIAnalysis: Structured analysis results for the web page.
         """
-        prompt = self.build_prompt(html, url)
+        prompt = self.build_prompt(html, url, title)
         
         try:
             response_text = self.send_prompt(prompt)
@@ -264,11 +283,11 @@ Please respond strictly with a valid JSON object matching this schema:
             return AIAnalysis(
                 website_type="Unknown",
                 framework="Unknown",
-                main_content_selector="body",
-                table_confidence=0.0,
                 content_confidence=0.0,
+                table_confidence=0.0,
                 requires_javascript=False,
-                scrape_strategy="Standard HTML extraction (Fallback)",
+                recommended_strategy="Standard HTML extraction (Fallback)",
                 warnings=[f"AI Analysis error: {str(err)}"],
-                summary=f"Fallback analysis generated due to AI processing failure: {err}"
+                summary=f"Fallback analysis generated due to AI processing failure: {err}",
+                main_content_selector="body"
             )
