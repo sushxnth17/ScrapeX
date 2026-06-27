@@ -1,10 +1,24 @@
-"""AI Page Analyzer module for architectural analysis of web pages in ScrapeX."""
+"""AI Page Analyzer module for architectural analysis of web pages in ScrapeX using Groq API."""
 
 from __future__ import annotations
 
 import json
+import logging
+import time
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, Union
+
+import requests
+
+try:
+    from backend.config import ConfigurationError, get_groq_api_key
+except ImportError:
+    from config import ConfigurationError, get_groq_api_key
+
+
+class AIAnalysisError(Exception):
+    """Custom exception raised for errors during AI analysis or external API communication."""
+    pass
 
 
 @dataclass
@@ -50,21 +64,29 @@ class AIAnalysis:
 
 class AIAnalyzer:
     """
-    Analyzes web page structure, technology stack, and content layout using AI LLM models.
+    Analyzes web page structure, technology stack, and content layout using Groq LLM API.
     
     This class serves as the interface between raw HTML scraping results and intelligence-driven
     extraction planning, enabling optimized selector detection and rendering choices.
     """
 
-    def __init__(self, api_key: Optional[str] = None) -> None:
+    def __init__(
+        self,
+        api_key: Optional[str] = None,
+        model: str = "llama-3.3-70b-versatile",
+        timeout: int = 15
+    ) -> None:
         """
         Initialize the AIAnalyzer instance.
         
         Args:
-            api_key (Optional[str]): API key for the LLM provider. If None, it will be lazily loaded 
-                                     from backend.config when performing API calls.
+            api_key (Optional[str]): API key for the Groq provider. If None, loaded dynamically from config.
+            model (str): Groq LLM model identifier. Defaults to 'llama-3.3-70b-versatile'.
+            timeout (int): HTTP request timeout in seconds. Defaults to 15 seconds.
         """
         self.api_key = api_key
+        self.model = model
+        self.timeout = timeout
 
     def build_prompt(self, html: str, url: str) -> str:
         """
@@ -77,7 +99,6 @@ class AIAnalyzer:
         Returns:
             str: Formatted prompt containing structural instructions and schema expectations.
         """
-        # Truncate HTML body if necessary to prevent context window bloat during initial analysis
         truncated_html = html[:8000] if len(html) > 8000 else html
 
         prompt = f"""
@@ -106,6 +127,78 @@ Please respond strictly with a valid JSON object matching this schema:
 """
         return prompt.strip()
 
+    def send_prompt(self, prompt: str, system_prompt: Optional[str] = None) -> str:
+        """
+        Send a prompt to the Groq API and return the raw JSON string response.
+        
+        Implements timeout, retry logic (retries once on failure), strict JSON output format,
+        and graceful error handling.
+        
+        Args:
+            prompt (str): The user prompt or analysis content to send.
+            system_prompt (Optional[str]): System instructions for the model.
+            
+        Returns:
+            str: Raw JSON string response from the LLM.
+            
+        Raises:
+            AIAnalysisError: If the API call fails after retries or returns invalid data.
+            ConfigurationError: If the Groq API key is missing.
+        """
+        api_key = self.api_key or get_groq_api_key()
+
+        url = "https://api.groq.com/openai/v1/chat/completions"
+        headers = {
+            "Authorization": f"Bearer {api_key}",
+            "Content-Type": "application/json"
+        }
+
+        if system_prompt is None:
+            system_prompt = "You are a web architecture analyzer for ScrapeX. You must output valid JSON only."
+
+        payload = {
+            "model": self.model,
+            "messages": [
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": prompt}
+            ],
+            "response_format": {"type": "json_object"},
+            "temperature": 0.1
+        }
+
+        last_exception: Optional[Exception] = None
+
+        # Retry once on failure (up to 2 total attempts)
+        for attempt in range(2):
+            try:
+                response = requests.post(url, headers=headers, json=payload, timeout=self.timeout)
+                if response.status_code != 200:
+                    raise AIAnalysisError(
+                        f"Groq API error (status code {response.status_code}): {response.text}"
+                    )
+                
+                response_data = response.json()
+                choices = response_data.get("choices", [])
+                if not choices:
+                    raise AIAnalysisError("Groq API returned an empty completion choice list.")
+                
+                content = choices[0].get("message", {}).get("content", "")
+                if not content:
+                    raise AIAnalysisError("Groq API returned empty message content.")
+                
+                return content
+
+            except (requests.RequestException, AIAnalysisError, json.JSONDecodeError) as err:
+                last_exception = err
+                logging.warning(
+                    f"Groq API request attempt {attempt + 1} failed: {err}. "
+                    f"{'Retrying once...' if attempt == 0 else 'No more retries.'}"
+                )
+                if attempt == 0:
+                    time.sleep(1.0)  # Short backoff before retry
+
+        raise AIAnalysisError(f"Groq API communication failed after retry: {last_exception}") from last_exception
+
     def parse_response(self, response: Union[str, Dict[str, Any]]) -> AIAnalysis:
         """
         Parse raw LLM response (JSON string or pre-parsed dictionary) into an AIAnalysis dataclass.
@@ -121,7 +214,6 @@ Please respond strictly with a valid JSON object matching this schema:
         """
         if isinstance(response, str):
             clean_response = response.strip()
-            # Handle potential markdown code block wrappers from LLM output
             if clean_response.startswith("```json"):
                 clean_response = clean_response[7:]
             if clean_response.startswith("```"):
@@ -153,11 +245,7 @@ Please respond strictly with a valid JSON object matching this schema:
 
     def analyze_page(self, html: str, url: str) -> AIAnalysis:
         """
-        Execute full architectural analysis on a target web page.
-        
-        Note:
-            This method is currently built as a structural architecture foundation.
-            Groq API calling will be integrated in subsequent phases.
+        Execute full architectural analysis on a target web page using Groq AI.
         
         Args:
             html (str): Raw or processed HTML content of the web page.
@@ -168,17 +256,19 @@ Please respond strictly with a valid JSON object matching this schema:
         """
         prompt = self.build_prompt(html, url)
         
-        # Placeholder / mock architectural response until Groq client integration
-        mock_response = {
-            "website_type": "Static / Generic",
-            "framework": "Standard HTML/CSS",
-            "main_content_selector": "article, main, body",
-            "table_confidence": 0.8,
-            "content_confidence": 0.9,
-            "requires_javascript": False,
-            "scrape_strategy": "Direct HTTP request and DOM selector parsing",
-            "warnings": [],
-            "summary": f"Architectural analysis preview for {url}. Ready for Groq integration.",
-        }
-        
-        return self.parse_response(mock_response)
+        try:
+            response_text = self.send_prompt(prompt)
+            return self.parse_response(response_text)
+        except (AIAnalysisError, ConfigurationError, ValueError) as err:
+            logging.error(f"AI analysis failed for {url}: {err}")
+            return AIAnalysis(
+                website_type="Unknown",
+                framework="Unknown",
+                main_content_selector="body",
+                table_confidence=0.0,
+                content_confidence=0.0,
+                requires_javascript=False,
+                scrape_strategy="Standard HTML extraction (Fallback)",
+                warnings=[f"AI Analysis error: {str(err)}"],
+                summary=f"Fallback analysis generated due to AI processing failure: {err}"
+            )

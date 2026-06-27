@@ -9,3 +9,4 @@ streamlit
 fastapi
 uvicorn
 python-dotenv
+groq
