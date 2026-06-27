@@ -1,4 +1,4 @@
-"""Main pipeline that orchestrates fetching, extraction, and parsing for ScrapeX."""
+"""Main pipeline that orchestrates fetching, AI analysis, extraction, and parsing for ScrapeX."""
 
 from __future__ import annotations
 
@@ -8,30 +8,28 @@ try:
     from . import fetcher
     from .extractor import extract_content
     from .parser import parse_html
+    from .ai import AIAnalyzer
 except ImportError:
     import fetcher
     from extractor import extract_content
     from parser import parse_html
+    from ai import AIAnalyzer
 
 
 def scrape(url: str) -> Optional[Dict[str, Any]]:
-    """Run the full scraping pipeline and return normalized output.
+    """Run the AI-guided scraping pipeline and return normalized output.
 
     Pipeline stages:
     1. Fetch HTML from the target URL.
-    2. Extract clean readable content.
-    3. Parse structured elements from HTML.
+    2. Run AI analysis to determine page architecture and optimal extraction strategy.
+    3. Execute extraction and parsing according to AI recommendation ('article', 'table', or 'mixed').
     4. Merge all available results into a single dictionary.
-
-    If fetching fails, returns None. If extraction or parsing fail, returns
-    partial data from the stage(s) that succeeded.
 
     Args:
         url: Target URL to scrape.
 
     Returns:
-        A dictionary containing normalized scrape results, or None if fetch
-        stage fails.
+        A dictionary containing normalized scrape results, or None if fetch stage fails.
     """
     print("Fetching...")
     html = fetcher.fetch_html(url)
@@ -39,25 +37,64 @@ def scrape(url: str) -> Optional[Dict[str, Any]]:
         print("Error: Failed to fetch HTML.")
         return None
 
+    # Run AI analysis before parsing/extraction
+    print("Running AI analysis...")
+    ai_analysis_dict: Optional[Dict[str, Any]] = None
+    rec_strategy: str = "mixed"
+
+    try:
+        analyzer = AIAnalyzer()
+        analysis = analyzer.analyze_page(html, url)
+        ai_analysis_dict = analysis.to_dict()
+        rec_strategy = (analysis.recommended_strategy or analysis.scrape_strategy or "mixed").lower()
+    except Exception as exc:
+        print(f"Warning: AI analysis failed during pipeline execution: {exc}")
+
+    print(f"AI Recommended Strategy: {rec_strategy}")
+
     extracted: Optional[Dict[str, str]] = None
-    print("Extracting...")
-    try:
-        extracted = extract_content(html)
-        if extracted is None:
-            print("Warning: Content extraction returned no clean text.")
-    except Exception as exc:
-        print(f"Warning: Extractor failed: {exc}")
-        extracted = None
-
     parsed: Dict[str, Any] = {}
-    print("Parsing...")
-    try:
-        parsed = parse_html(html) or {}
-    except Exception as exc:
-        print(f"Warning: Parser failed: {exc}")
-        parsed = {}
 
-    # Decide clean text (fallback logic)
+    # Execute workflow based on AI recommendation
+    if "article" in rec_strategy and "table" not in rec_strategy:
+        print("Prioritizing Extractor (Article focus)...")
+        try:
+            extracted = extract_content(html)
+        except Exception as exc:
+            print(f"Warning: Extractor failed: {exc}")
+
+        try:
+            parsed = parse_html(html) or {}
+        except Exception as exc:
+            print(f"Warning: Parser failed: {exc}")
+
+    elif "table" in rec_strategy and "article" not in rec_strategy:
+        print("Prioritizing Parser (Table focus)...")
+        try:
+            parsed = parse_html(html) or {}
+        except Exception as exc:
+            print(f"Warning: Parser failed: {exc}")
+
+        if not parsed.get("paragraphs"):
+            try:
+                extracted = extract_content(html)
+            except Exception as exc:
+                print(f"Warning: Extractor fallback failed: {exc}")
+
+    else:
+        # "mixed" or default fallback: run both stages
+        print("Running both Extractor and Parser (Mixed focus)...")
+        try:
+            extracted = extract_content(html)
+        except Exception as exc:
+            print(f"Warning: Extractor failed: {exc}")
+
+        try:
+            parsed = parse_html(html) or {}
+        except Exception as exc:
+            print(f"Warning: Parser failed: {exc}")
+
+    # Decide clean text
     if extracted and extracted.get("text"):
         clean_text = extracted["text"]
     else:
@@ -75,6 +112,9 @@ def scrape(url: str) -> Optional[Dict[str, Any]]:
         "scrape_method": getattr(fetcher, "LAST_FETCH_METHOD", "Unknown"),
     }
 
+    if ai_analysis_dict:
+        result["ai_analysis"] = ai_analysis_dict
+
     print("Done.")
     return result
 
@@ -88,6 +128,8 @@ def _print_summary(result: Dict[str, Any]) -> None:
     print(f"Paragraphs count: {len(result.get('paragraphs', []))}")
     print(f"Links count: {len(result.get('links', []))}")
     print(f"Tables count: {len(result.get('tables', []))}")
+    if "ai_analysis" in result:
+        print(f"AI Strategy: {result['ai_analysis'].get('recommended_strategy', 'N/A')}")
 
 
 if __name__ == "__main__":
