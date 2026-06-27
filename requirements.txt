@@ -8,3 +8,4 @@ lxml
 streamlit
 fastapi
 uvicorn
+python-dotenv

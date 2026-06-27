@@ -1,10 +1,14 @@
-_pycache__/
+__pycache__/
 *.pyc
-.env
+.venv/
 venv/
+
+.env
+.env.*
+!.env.example
 
 # ScrapeX outputs
 *.csv
 *.pdf
 
-scratch/
+scratch/
