@@ -74,15 +74,31 @@ function populateAIAnalysis(aiData) {
 	const warningsContainer = document.getElementById("ai-warnings");
 	if (warningsContainer) {
 		warningsContainer.innerHTML = "";
-		if (aiData.warnings && aiData.warnings.length > 0) {
-			aiData.warnings.forEach(warn => {
-				const tag = document.createElement("span");
-				tag.className = "warning-tag";
-				tag.textContent = warn;
-				warningsContainer.appendChild(tag);
+		const warnings = aiData.warnings || [];
+		if (warnings.length > 0) {
+			warnings.forEach(warn => {
+				const card = document.createElement("div");
+				const lower = warn.toLowerCase();
+				let type = "warning";
+				let icon = "⚠️";
+
+				if (lower.includes("appears to use") || lower.includes("react") || lower.includes("vue") || lower.includes("angular") || lower.includes("framework")) {
+					type = "info";
+					icon = "ℹ️";
+				} else if (lower.includes("login") || lower.includes("paywall") || lower.includes("captcha") || lower.includes("error") || lower.includes("failed")) {
+					type = "danger";
+					icon = "🔒";
+				}
+
+				card.className = `warning-card ${type}`;
+				card.innerHTML = `<span class="warning-icon">${icon}</span><span class="warning-text">${warn}</span>`;
+				warningsContainer.appendChild(card);
 			});
 		} else {
-			warningsContainer.textContent = "None";
+			const successCard = document.createElement("div");
+			successCard.className = "warning-card success";
+			successCard.innerHTML = `<span class="warning-icon">✓</span><span class="warning-text">No scraping obstacles or anti-scraping protections detected.</span>`;
+			warningsContainer.appendChild(successCard);
 		}
 	}
 }
@@ -112,6 +128,15 @@ form.addEventListener("submit", async (e) => {
 		body: JSON.stringify({ url })
 	})
 		.then(res => res.ok ? res.json() : null)
+		.then(aiData => {
+			if (aiData) {
+				populateAIAnalysis(aiData);
+				if (loadingMsg.textContent.includes("Analyzing")) {
+					loadingMsg.textContent = "AI Analysis complete. Scraping data...";
+				}
+			}
+			return aiData;
+		})
 		.catch(err => {
 			console.warn("AI Analysis request failed:", err);
 			return null;

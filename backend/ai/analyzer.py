@@ -124,7 +124,8 @@ Instructions:
 2. If the frontend framework or technology cannot be confirmed via meta tags, script source tags, or DOM indicators, set "framework" to "Unknown".
 3. "content_confidence" and "table_confidence" must be numeric floating-point values between 0.0 and 1.0.
 4. "requires_javascript" must be a boolean (true or false).
-5. Output strictly raw JSON matching the exact schema below. Do NOT use markdown code blocks (e.g., do not use ```json ... ```), and do NOT provide explanations or conversating text before or after the JSON object.
+5. Identify any warnings or scraping obstacles such as "Login required", "Paywall detected", "Anti-bot protection", or low content confidence.
+6. Output strictly raw JSON matching the exact schema below. Do NOT use markdown code blocks (e.g., do not use ```json ... ```), and do NOT provide explanations or conversating text before or after the JSON object.
 
 Required Schema:
 {{
@@ -248,15 +249,30 @@ Required Schema:
             raise ValueError(f"Unsupported response type for parsing: {type(response)}")
 
         rec_strat = str(data.get("recommended_strategy") or data.get("scrape_strategy") or "Standard HTML parsing")
+        warnings_list = list(data.get("warnings", []))
+
+        # Synthesize standard warning cards if supported by metrics and indicators
+        framework_str = str(data.get("framework", "Unknown"))
+        if framework_str != "Unknown" and framework_str != "Standard HTML/CSS":
+            if not any(framework_str.lower() in w.lower() or "appears to use" in w.lower() for w in warnings_list):
+                warnings_list.append(f"This site appears to use {framework_str}.")
+
+        content_conf = float(data.get("content_confidence", 0.0))
+        if content_conf < 0.4 and not any("content extraction" in w.lower() or "confidence" in w.lower() for w in warnings_list):
+            warnings_list.append("Content extraction confidence is low.")
+
+        table_conf = float(data.get("table_confidence", 0.0))
+        if table_conf < 0.2 and not any("table" in w.lower() for w in warnings_list):
+            warnings_list.append("No semantic HTML tables detected.")
 
         return AIAnalysis(
             website_type=str(data.get("website_type", "Unknown")),
-            framework=str(data.get("framework", "Unknown")),
-            content_confidence=float(data.get("content_confidence", 0.0)),
-            table_confidence=float(data.get("table_confidence", 0.0)),
+            framework=framework_str,
+            content_confidence=content_conf,
+            table_confidence=table_conf,
             requires_javascript=bool(data.get("requires_javascript", False)),
             recommended_strategy=rec_strat,
-            warnings=list(data.get("warnings", [])),
+            warnings=warnings_list,
             summary=str(data.get("summary", "")),
             main_content_selector=str(data.get("main_content_selector", "body")),
         )
@@ -287,7 +303,7 @@ Required Schema:
                 table_confidence=0.0,
                 requires_javascript=False,
                 recommended_strategy="Standard HTML extraction (Fallback)",
-                warnings=[f"AI Analysis error: {str(err)}"],
+                warnings=[f"AI Analysis notice: {str(err)}"],
                 summary=f"Fallback analysis generated due to AI processing failure: {err}",
                 main_content_selector="body"
             )
