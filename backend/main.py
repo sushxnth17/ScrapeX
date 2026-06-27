@@ -55,44 +55,29 @@ def scrape(url: str) -> Optional[Dict[str, Any]]:
     extracted: Optional[Dict[str, str]] = None
     parsed: Dict[str, Any] = {}
 
-    # Execute workflow based on AI recommendation
-    if "article" in rec_strategy and "table" not in rec_strategy:
-        print("Prioritizing Extractor (Article focus)...")
-        try:
-            extracted = extract_content(html)
-        except Exception as exc:
-            print(f"Warning: Extractor failed: {exc}")
+    # Always execute HTML DOM parser to capture structured elements (tables, headings, links)
+    try:
+        parsed = parse_html(html) or {}
+    except Exception as exc:
+        print(f"Warning: Parser failed: {exc}")
+        parsed = {}
 
-        try:
-            parsed = parse_html(html) or {}
-        except Exception as exc:
-            print(f"Warning: Parser failed: {exc}")
-
-    elif "table" in rec_strategy and "article" not in rec_strategy:
-        print("Prioritizing Parser (Table focus)...")
-        try:
-            parsed = parse_html(html) or {}
-        except Exception as exc:
-            print(f"Warning: Parser failed: {exc}")
-
+    # Execute text extraction based on AI recommendation
+    if "table" in rec_strategy and "article" not in rec_strategy:
+        print("Strategy: Table focus. Prioritizing structured DOM elements...")
+        # For pure table strategy, run extractor only if text content is missing
         if not parsed.get("paragraphs"):
             try:
                 extracted = extract_content(html)
             except Exception as exc:
                 print(f"Warning: Extractor fallback failed: {exc}")
-
     else:
-        # "mixed" or default fallback: run both stages
-        print("Running both Extractor and Parser (Mixed focus)...")
+        # For article or mixed focus, run content extractor for clean body text
+        print("Strategy: Article/Mixed focus. Running content extractor...")
         try:
             extracted = extract_content(html)
         except Exception as exc:
             print(f"Warning: Extractor failed: {exc}")
-
-        try:
-            parsed = parse_html(html) or {}
-        except Exception as exc:
-            print(f"Warning: Parser failed: {exc}")
 
     # Decide clean text
     if extracted and extracted.get("text"):
