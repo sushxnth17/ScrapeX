@@ -13,7 +13,7 @@ const previewEl = document.getElementById("content-preview");
 const tablesContainer = document.getElementById("extracted-tables-container");
 const linksContainer = document.getElementById("extracted-links-container");
 
-// Helper to format error messages (handles Pydantic arrays and custom details)
+// Helper to format error messages
 function getErrorMessage(data, fallbackMsg) {
 	if (data && data.detail) {
 		if (Array.isArray(data.detail)) {
@@ -32,6 +32,77 @@ const csvBtn = document.getElementById("download-csv");
 const tablesBtn = document.getElementById("download-tables");
 const pdfBtn = document.getElementById("download-pdf");
 
+// Populate AI Analysis Card
+function populateAIAnalysis(aiData) {
+	const statusBadge = document.getElementById("ai-status-badge");
+	if (statusBadge) {
+		statusBadge.textContent = "Analyzed";
+		statusBadge.classList.add("active");
+	}
+
+	if (!aiData) return;
+
+	document.getElementById("ai-website-type").textContent = aiData.website_type || "Unknown";
+	document.getElementById("ai-framework").textContent = aiData.framework || "Unknown";
+
+	const contentConf = Math.round((aiData.content_confidence || 0) * 100);
+	document.getElementById("ai-content-confidence").textContent = `${contentConf}%`;
+	const contentFill = document.getElementById("ai-content-fill");
+	if (contentFill) contentFill.style.width = `${contentConf}%`;
+
+	const tableConf = Math.round((aiData.table_confidence || 0) * 100);
+	document.getElementById("ai-table-confidence").textContent = `${tableConf}%`;
+	const tableFill = document.getElementById("ai-table-fill");
+	if (tableFill) tableFill.style.width = `${tableConf}%`;
+
+	const reqJsEl = document.getElementById("ai-requires-js");
+	if (reqJsEl) {
+		if (aiData.requires_javascript) {
+			reqJsEl.textContent = "Yes";
+			reqJsEl.className = "ai-value-badge js-yes";
+		} else {
+			reqJsEl.textContent = "No";
+			reqJsEl.className = "ai-value-badge js-no";
+		}
+	}
+
+	document.getElementById("ai-strategy").textContent =
+		aiData.recommended_strategy || aiData.scrape_strategy || "Standard HTML extraction";
+	document.getElementById("ai-summary").textContent =
+		aiData.summary || "No architectural summary provided.";
+
+	const warningsContainer = document.getElementById("ai-warnings");
+	if (warningsContainer) {
+		warningsContainer.innerHTML = "";
+		const warnings = aiData.warnings || [];
+		if (warnings.length > 0) {
+			warnings.forEach(warn => {
+				const card = document.createElement("div");
+				const lower = warn.toLowerCase();
+				let type = "warning";
+				let icon = "⚠️";
+
+				if (lower.includes("appears to use") || lower.includes("react") || lower.includes("vue") || lower.includes("angular") || lower.includes("framework")) {
+					type = "info";
+					icon = "ℹ️";
+				} else if (lower.includes("login") || lower.includes("paywall") || lower.includes("captcha") || lower.includes("error") || lower.includes("failed")) {
+					type = "danger";
+					icon = "🔒";
+				}
+
+				card.className = `warning-card ${type}`;
+				card.innerHTML = `<span class="warning-icon">${icon}</span><span class="warning-text">${warn}</span>`;
+				warningsContainer.appendChild(card);
+			});
+		} else {
+			const successCard = document.createElement("div");
+			successCard.className = "warning-card success";
+			successCard.innerHTML = `<span class="warning-icon">✓</span><span class="warning-text">No scraping obstacles or anti-scraping protections detected.</span>`;
+			warningsContainer.appendChild(successCard);
+		}
+	}
+}
+
 // Handle form submit
 form.addEventListener("submit", async (e) => {
 	e.preventDefault();
@@ -43,7 +114,33 @@ form.addEventListener("submit", async (e) => {
 		return;
 	}
 
-	loadingMsg.textContent = "Scraping...";
+	loadingMsg.textContent = "Analyzing & Scraping...";
+	const statusBadge = document.getElementById("ai-status-badge");
+	if (statusBadge) {
+		statusBadge.textContent = "Analyzing...";
+		statusBadge.classList.remove("active");
+	}
+
+	// Trigger AI Analysis in parallel with scraping
+	const analyzePromise = fetch(`${API_BASE_URL}/analyze`, {
+		method: "POST",
+		headers: { "Content-Type": "application/json" },
+		body: JSON.stringify({ url })
+	})
+		.then(res => res.ok ? res.json() : null)
+		.then(aiData => {
+			if (aiData) {
+				populateAIAnalysis(aiData);
+				if (loadingMsg.textContent.includes("Analyzing")) {
+					loadingMsg.textContent = "AI Analysis complete. Scraping data...";
+				}
+			}
+			return aiData;
+		})
+		.catch(err => {
+			console.warn("AI Analysis request failed:", err);
+			return null;
+		});
 
 	try {
 		const response = await fetch(`${API_BASE_URL}/scrape`, {
@@ -68,7 +165,7 @@ form.addEventListener("submit", async (e) => {
 			return;
 		}
 
-		// Fill UI
+		// Fill scraping UI
 		titleEl.textContent = data.title || "No title";
 		lengthEl.textContent = data.content_length || 0;
 		headingsEl.textContent = data.headings?.length || 0;
@@ -143,16 +240,16 @@ form.addEventListener("submit", async (e) => {
 		
 		if (data.links && data.links.length > 0) {
 			for (const link of data.links) {
-				const url = (link.href || "").trim();
-				if (!url) continue;
+				const linkUrl = (link.href || "").trim();
+				if (!linkUrl) continue;
 
 				const text = (link.text || "").trim();
-				if (!uniqueLinksMap.has(url)) {
-					uniqueLinksMap.set(url, text);
+				if (!uniqueLinksMap.has(linkUrl)) {
+					uniqueLinksMap.set(linkUrl, text);
 				} else {
-					const existingText = uniqueLinksMap.get(url);
+					const existingText = uniqueLinksMap.get(linkUrl);
 					if (!existingText && text) {
-						uniqueLinksMap.set(url, text);
+						uniqueLinksMap.set(linkUrl, text);
 					}
 				}
 			}
@@ -196,6 +293,10 @@ form.addEventListener("submit", async (e) => {
 			noLinks.textContent = "No links found on this page.";
 			linksContainer.appendChild(noLinks);
 		}
+
+		// Populate AI card asynchronously once received
+		const aiResult = await analyzePromise;
+		populateAIAnalysis(aiResult);
 
 	} catch (error) {
 		console.error(error);
@@ -269,21 +370,17 @@ const tabPanels = document.querySelectorAll(".tab-panel");
 
 tabButtons.forEach(btn => {
 	btn.addEventListener("click", () => {
-		// Deactivate all tab buttons
 		tabButtons.forEach(b => {
 			b.classList.remove("active");
 			b.setAttribute("aria-selected", "false");
 		});
-		// Hide all tab panels
 		tabPanels.forEach(p => {
 			p.classList.remove("active");
 		});
 
-		// Activate the selected tab button
 		btn.classList.add("active");
 		btn.setAttribute("aria-selected", "true");
 
-		// Show the corresponding tab panel
 		const panelId = btn.getAttribute("aria-controls");
 		const panel = document.getElementById(panelId);
 		if (panel) {

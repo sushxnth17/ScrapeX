@@ -1,4 +1,4 @@
-"""FastAPI app exposing ScrapeX scraping pipeline."""
+"""FastAPI app exposing ScrapeX scraping pipeline and AI analysis endpoints."""
 
 from __future__ import annotations
 
@@ -13,9 +13,13 @@ import uvicorn
 try:
 	# Works when running as a package: uvicorn backend.app:app
 	from .main import scrape
+	from .fetcher import fetch_html
+	from .ai import AIAnalyzer
 except ImportError:
 	# Works when running from backend folder: uvicorn app:app or uvicorn api:app
 	from main import scrape
+	from fetcher import fetch_html
+	from ai import AIAnalyzer
 
 try:
 	from .exporter.csv_export import export_to_csv
@@ -27,6 +31,12 @@ except ImportError:
 
 class ScrapeRequest(BaseModel):
 	"""Payload for scrape endpoint."""
+
+	url: HttpUrl
+
+
+class AnalyzeRequest(BaseModel):
+	"""Payload for analyze endpoint."""
 
 	url: HttpUrl
 
@@ -52,7 +62,23 @@ def root():
 		"message": "ScrapeX API is running.",
 		"docs": "/docs",
 		"scrape_endpoint": "/scrape (POST)",
+		"analyze_endpoint": "/analyze (POST)",
 	}
+
+
+@app.post("/analyze")
+def analyze_endpoint(payload: AnalyzeRequest):
+	"""Analyze web page structure without performing scraping."""
+	url_str = str(payload.url)
+	html = fetch_html(url_str)
+	if not html:
+		raise HTTPException(
+			status_code=502, detail="Analysis failed: Unable to fetch target URL."
+		)
+
+	analyzer = AIAnalyzer()
+	analysis = analyzer.analyze_page(html=html, url=url_str)
+	return analysis.to_dict()
 
 
 @app.post("/scrape")
