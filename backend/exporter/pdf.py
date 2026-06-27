@@ -6,6 +6,14 @@ from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle, LongTable, PageBreak
 from reportlab.lib import colors
 
+try:
+	from backend.ai import AIAnalyzer
+except ImportError:
+	try:
+		from ai import AIAnalyzer
+	except ImportError:
+		AIAnalyzer = None
+
 
 def add_footer(canvas, doc):
 	"""Canvas callback to draw a clean footer on all pages."""
@@ -61,11 +69,11 @@ def calculate_col_widths(rows, max_total_width=504.0, max_col_width=180.0, min_c
 
 
 def export_to_pdf(data: Dict[str, Any], filename: str = "report.pdf") -> None:
-	"""Generate a clean, professional PDF report from scraped website data.
+	"""Generate a clean, professional PDF report from scraped website data with AI analysis.
 
 	Args:
 		data: Scraped data dictionary containing values such as title, url,
-			clean_text, and headings.
+			clean_text, headings, and optional ai_analysis.
 		filename: Output PDF filename.
 	"""
 	# Document layout configuration (margins set to 54pt / 0.75 in)
@@ -141,7 +149,7 @@ def export_to_pdf(data: Dict[str, Any], filename: str = "report.pdf") -> None:
 		fontSize=13,
 		leading=17,
 		textColor=secondary_color,
-		spaceBefore=14,
+		spaceBefore=12,
 		spaceAfter=6,
 		keepWithNext=True
 	)
@@ -153,7 +161,7 @@ def export_to_pdf(data: Dict[str, Any], filename: str = "report.pdf") -> None:
 		fontSize=9,
 		leading=14,
 		textColor=text_color,
-		spaceAfter=10
+		spaceAfter=6
 	)
 
 	bullet_style = ParagraphStyle(
@@ -189,7 +197,7 @@ def export_to_pdf(data: Dict[str, Any], filename: str = "report.pdf") -> None:
 	# 1. Cover Header
 	# ----------------------------------------------------
 	story.append(Paragraph("ScrapeX Web Scraper Report", title_style))
-	story.append(Spacer(1, 10))
+	story.append(Spacer(1, 8))
 
 	now = datetime.now()
 	date_str = now.strftime("%Y-%m-%d")
@@ -204,30 +212,86 @@ def export_to_pdf(data: Dict[str, Any], filename: str = "report.pdf") -> None:
 		[Paragraph("Scrape Method:", meta_label_style), Paragraph(scrape_method, meta_value_style)]
 	]
 	
-	# Total printable width is 504 (612 page width - 108 margins)
 	meta_table = Table(meta_data, colWidths=[110, 394])
 	meta_table.setStyle(TableStyle([
 		('VALIGN', (0, 0), (-1, -1), 'TOP'),
-		('BOTTOMPADDING', (0, 0), (-1, -1), 4),
-		('TOPPADDING', (0, 0), (-1, -1), 4),
+		('BOTTOMPADDING', (0, 0), (-1, -1), 3),
+		('TOPPADDING', (0, 0), (-1, -1), 3),
 	]))
 	story.append(meta_table)
 	
-	# Divider line separating header from summary
+	# Divider line
 	divider = Table([[""]], colWidths=[504])
 	divider.setStyle(TableStyle([
 		('LINEBELOW', (0, 0), (-1, -1), 1, primary_color),
-		('BOTTOMPADDING', (0, 0), (-1, -1), 8),
-		('TOPPADDING', (0, 0), (-1, -1), 8),
+		('BOTTOMPADDING', (0, 0), (-1, -1), 6),
+		('TOPPADDING', (0, 0), (-1, -1), 6),
 	]))
 	story.append(divider)
-	story.append(Spacer(1, 15))
+	story.append(Spacer(1, 8))
 
 	# ----------------------------------------------------
-	# 2. Summary
+	# 2. AI Architectural Analysis Section
+	# ----------------------------------------------------
+	ai_info = data.get("ai_analysis")
+	if not ai_info and AIAnalyzer:
+		try:
+			ai_info = AIAnalyzer().analyze_page(clean_text[:5000], url).to_dict()
+		except Exception as exc:
+			print(f"Warning: PDF export fallback AI analysis failed: {exc}")
+			ai_info = None
+
+	if ai_info and isinstance(ai_info, dict):
+		story.append(Paragraph("AI Architectural Analysis", section_heading_style))
+		story.append(Spacer(1, 4))
+
+		website_type_str = escape(str(ai_info.get("website_type") or "Unknown"))
+		framework_str = escape(str(ai_info.get("framework") or "Unknown"))
+		content_conf_val = float(ai_info.get("content_confidence") or 0.0)
+		table_conf_val = float(ai_info.get("table_confidence") or 0.0)
+		content_conf_str = f"{int(content_conf_val * 100)}%"
+		table_conf_str = f"{int(table_conf_val * 100)}%"
+		req_js_str = "Yes" if ai_info.get("requires_javascript") else "No"
+		rec_strat_str = escape(str(ai_info.get("recommended_strategy") or ai_info.get("scrape_strategy") or "Standard HTML"))
+		summary_text = escape(str(ai_info.get("summary") or "No architectural summary provided."))
+
+		ai_table_data = [
+			[Paragraph("<b>Metric / Indicator</b>", meta_label_style), Paragraph("<b>AI Evaluation Result</b>", meta_label_style)],
+			[Paragraph("Website Type", body_style), Paragraph(website_type_str, body_style)],
+			[Paragraph("Detected Framework", body_style), Paragraph(framework_str, body_style)],
+			[Paragraph("Content Confidence", body_style), Paragraph(content_conf_str, body_style)],
+			[Paragraph("Table Confidence", body_style), Paragraph(table_conf_str, body_style)],
+			[Paragraph("Requires JavaScript", body_style), Paragraph(req_js_str, body_style)],
+			[Paragraph("Recommended Strategy", body_style), Paragraph(f"<b>{rec_strat_str}</b>", body_style)],
+			[Paragraph("Architectural Summary", body_style), Paragraph(summary_text, body_style)]
+		]
+
+		raw_warnings = ai_info.get("warnings") or []
+		if raw_warnings:
+			warnings_formatted = "<br/>".join([f"• {escape(str(w))}" for w in raw_warnings])
+			ai_table_data.append([Paragraph("AI Warnings & Hazards", body_style), Paragraph(warnings_formatted, body_style)])
+		else:
+			ai_table_data.append([Paragraph("AI Warnings & Hazards", body_style), Paragraph("None detected.", body_style)])
+
+		ai_table = Table(ai_table_data, colWidths=[180, 324])
+		ai_table.setStyle(TableStyle([
+			('BACKGROUND', (0, 0), (-1, 0), line_color),
+			('VALIGN', (0, 0), (-1, -1), 'TOP'),
+			('BOTTOMPADDING', (0, 0), (-1, -1), 4),
+			('TOPPADDING', (0, 0), (-1, -1), 4),
+			('LEFTPADDING', (0, 0), (-1, -1), 8),
+			('RIGHTPADDING', (0, 0), (-1, -1), 8),
+			('GRID', (0, 0), (-1, -1), 0.5, line_color),
+			('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, bg_color])
+		]))
+		story.append(ai_table)
+		story.append(Spacer(1, 10))
+
+	# ----------------------------------------------------
+	# 3. Summary Statistics
 	# ----------------------------------------------------
 	story.append(Paragraph("Summary Statistics", section_heading_style))
-	story.append(Spacer(1, 6))
+	story.append(Spacer(1, 4))
 
 	summary_data = [
 		[Paragraph("<b>Statistic</b>", meta_label_style), Paragraph("<b>Value</b>", meta_label_style)],
@@ -240,8 +304,9 @@ def export_to_pdf(data: Dict[str, Any], filename: str = "report.pdf") -> None:
 	summary_table = Table(summary_data, colWidths=[252, 252])
 	summary_table.setStyle(TableStyle([
 		('BACKGROUND', (0, 0), (-1, 0), line_color),
-		('BOTTOMPADDING', (0, 0), (-1, -1), 6),
-		('TOPPADDING', (0, 0), (-1, -1), 6),
+		('VALIGN', (0, 0), (-1, -1), 'TOP'),
+		('BOTTOMPADDING', (0, 0), (-1, -1), 4),
+		('TOPPADDING', (0, 0), (-1, -1), 4),
 		('LEFTPADDING', (0, 0), (-1, -1), 8),
 		('RIGHTPADDING', (0, 0), (-1, -1), 8),
 		('GRID', (0, 0), (-1, -1), 0.5, line_color),
@@ -253,7 +318,7 @@ def export_to_pdf(data: Dict[str, Any], filename: str = "report.pdf") -> None:
 	story.append(PageBreak())
 
 	# ----------------------------------------------------
-	# 3. Content Preview
+	# 4. Content Preview
 	# ----------------------------------------------------
 	story.append(Paragraph("Content Preview", section_heading_style))
 	story.append(Spacer(1, 6))
@@ -264,7 +329,7 @@ def export_to_pdf(data: Dict[str, Any], filename: str = "report.pdf") -> None:
 	story.append(Spacer(1, 15))
 
 	# ----------------------------------------------------
-	# 4. Headings
+	# 5. Headings
 	# ----------------------------------------------------
 	story.append(Paragraph("Headings List", section_heading_style))
 	story.append(Spacer(1, 6))
@@ -276,7 +341,7 @@ def export_to_pdf(data: Dict[str, Any], filename: str = "report.pdf") -> None:
 	story.append(Spacer(1, 15))
 
 	# ----------------------------------------------------
-	# 5. Tables
+	# 6. Tables
 	# ----------------------------------------------------
 	if tables:
 		story.append(Paragraph("Extracted Tables", section_heading_style))
@@ -295,7 +360,6 @@ def export_to_pdf(data: Dict[str, Any], filename: str = "report.pdf") -> None:
 				formatted_row = []
 				for cell in row:
 					text_str = str(cell or "").strip()
-					# Cap extremely long single cell strings to keep layout clean
 					if len(text_str) > 200:
 						text_str = text_str[:197] + "..."
 					cell_text = escape(text_str)
@@ -308,7 +372,6 @@ def export_to_pdf(data: Dict[str, Any], filename: str = "report.pdf") -> None:
 				continue
 
 			try:
-				# 1. Pad rows to raw_max_cols first so we can analyze columns
 				raw_max_cols = max(len(row) for row in formatted_rows)
 				padded_rows = []
 				for row in formatted_rows:
@@ -317,7 +380,6 @@ def export_to_pdf(data: Dict[str, Any], filename: str = "report.pdf") -> None:
 						padded_row.append(Paragraph("", cell_style))
 					padded_rows.append(padded_row)
 
-				# 2. Find columns that are not completely empty across all rows
 				active_col_indices = []
 				for col_idx in range(raw_max_cols):
 					col_has_content = False
@@ -329,13 +391,11 @@ def export_to_pdf(data: Dict[str, Any], filename: str = "report.pdf") -> None:
 					if col_has_content:
 						active_col_indices.append(col_idx)
 
-				# 3. Limit to at most 8 active columns to ensure readability in portrait PDF
 				active_col_indices = active_col_indices[:8]
 
 				if not active_col_indices:
 					continue
 
-				# 4. Reconstruct rows keeping only active columns
 				final_rows = []
 				for row in padded_rows:
 					final_row = [row[idx] for idx in active_col_indices]
@@ -343,28 +403,23 @@ def export_to_pdf(data: Dict[str, Any], filename: str = "report.pdf") -> None:
 
 				max_cols = len(active_col_indices)
 
-				# 5. Detect rows that contain only a single populated cell in Column 0, and span them across the entire row
 				span_commands = []
 				for r_idx, row in enumerate(final_rows):
 					non_empty_indices = [c_idx for c_idx, cell in enumerate(row) if cell.text.strip()]
 					if len(non_empty_indices) == 1 and non_empty_indices[0] == 0:
 						span_commands.append(('SPAN', (0, r_idx), (max_cols - 1, r_idx)))
 
-				# Add page break before very large tables to prevent awkward splits (except the first table)
 				if idx > 1:
 					if len(final_rows) > 10:
 						story.append(PageBreak())
 					else:
 						story.append(Spacer(1, 15))
 
-				# Spacer and table title header
 				story.append(Paragraph(f"<b>Table {idx}:</b>", styles["Heading3"]))
 				story.append(Spacer(1, 6))
 
-				# Auto-size column widths based on content
 				col_widths = calculate_col_widths(final_rows)
 				
-				# Render centered table with repeating headers across pages
 				t = LongTable(final_rows, colWidths=col_widths, repeatRows=1, hAlign='CENTER')
 				t_style_list = [
 					('BACKGROUND', (0, 0), (-1, 0), primary_color),
