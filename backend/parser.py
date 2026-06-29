@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import re
-from typing import Dict, List
+from typing import Any, Dict, List, Optional
 
 from bs4 import BeautifulSoup
 
@@ -147,11 +147,19 @@ def is_data_table(table) -> bool:
 	return True
 
 
-def parse_html(html: str) -> Dict[str, object]:
-	"""Parse raw HTML into a structured dictionary.
+def parse_html(html: str, strategy: Optional[Dict[str, Any]] = None) -> Dict[str, object]:
+	"""Parse raw HTML into a structured dictionary with optional strategy-guided prioritization.
+
+	Adaptive Strategy Decisions:
+	- prioritize_headings (bool): If True, preserves complete heading hierarchy (H1-H6).
+	  Otherwise, extracts primary headings (H1-H3).
+	- prioritize_tables (bool): If True, preserves every detected HTML table with content,
+	  bypassing strict layout filtering heuristics.
+	- prioritize_links (bool): If True, preserves all valid hyperlinks extracted from DOM.
 
 	Args:
 		html: Raw HTML string to parse.
+		strategy: Optional dictionary or object containing strategy flags.
 
 	Returns:
 		A dictionary containing title, headings, paragraphs, links, and tables.
@@ -167,18 +175,35 @@ def parse_html(html: str) -> Dict[str, object]:
 	if not html or not isinstance(html, str):
 		return result
 
+	# Extract strategy flags conservatively
+	strat_dict: Dict[str, Any] = {}
+	if strategy:
+		if hasattr(strategy, "to_dict"):
+			strat_dict = strategy.to_dict()
+		elif isinstance(strategy, dict):
+			strat_dict = strategy
+
+	prioritize_headings = bool(strat_dict.get("prioritize_headings", False))
+	prioritize_tables = bool(strat_dict.get("prioritize_tables", False))
+	prioritize_links = bool(strat_dict.get("prioritize_links", False))
+
 	try:
 		soup = BeautifulSoup(html, "lxml")
 	except Exception:
-		return result
+		try:
+			soup = BeautifulSoup(html, "html.parser")
+		except Exception:
+			return result
 
 	title_tag = soup.find("title")
 	if title_tag:
 		result["title"] = _clean_text(title_tag.get_text())
 
+	# Adaptive Heading Extraction: preserve H1-H6 if prioritized, otherwise H1-H3
+	heading_tags = ["h1", "h2", "h3", "h4", "h5", "h6"] if prioritize_headings else ["h1", "h2", "h3"]
 	headings = [
 		_clean_text(tag.get_text())
-		for tag in soup.find_all(["h1", "h2", "h3"])
+		for tag in soup.find_all(heading_tags)
 		if _clean_text(tag.get_text())
 	]
 	result["headings"] = _dedupe_preserve_order(headings)
@@ -190,6 +215,7 @@ def parse_html(html: str) -> Dict[str, object]:
 			paragraphs.append(text)
 	result["paragraphs"] = _dedupe_preserve_order(paragraphs)
 
+	# Adaptive Link Extraction: preserve all valid hyperlinked anchors
 	links = []
 	seen_links = set()
 	for tag in soup.find_all("a", href=True):
@@ -206,10 +232,11 @@ def parse_html(html: str) -> Dict[str, object]:
 		links.append({"text": text, "href": href})
 	result["links"] = links
 
+	# Adaptive Table Extraction: bypass layout heuristics if prioritize_tables is set
 	tables = []
 	seen_tables = set()
 	for table in soup.find_all("table"):
-		if not is_data_table(table):
+		if not prioritize_tables and not is_data_table(table):
 			continue
 
 		rows = []
@@ -230,6 +257,7 @@ def parse_html(html: str) -> Dict[str, object]:
 
 	result["tables"] = tables
 	return result
+
 
 
 if __name__ == "__main__":

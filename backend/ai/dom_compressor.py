@@ -235,14 +235,20 @@ class DOMCompressor:
 
         # Vue indicators
         for tag in soup.find_all(True):
-            attrs_str = " ".join(tag.attrs.keys()).lower()
-            if any(attr.startswith("data-v-") or attr in ["v-bind", "v-model", "v-if", "v-for"] for attr in tag.attrs.keys()):
-                hints.add("Vue.js")
-                break
+            if isinstance(tag.attrs, dict):
+                if any(attr.startswith("data-v-") or attr in ["v-bind", "v-model", "v-if", "v-for"] for attr in tag.attrs.keys()):
+                    hints.add("Vue.js")
+                    break
 
         # Angular indicators
-        if soup.find(attrs=lambda attrs: attrs and any(k.startswith("ng-") or k.startswith("data-ng-") for k in attrs.keys())):
+        def _is_angular_attrs(attrs: Any) -> bool:
+            if isinstance(attrs, dict):
+                return any(k.startswith("ng-") or k.startswith("data-ng-") for k in attrs.keys())
+            return False
+
+        if soup.find(attrs=_is_angular_attrs):
             hints.add("Angular")
+
 
         # Script sources & Stylesheet links
         for script in soup.find_all("script", src=True):
