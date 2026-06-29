@@ -87,7 +87,70 @@
 				</div>
 			</article>
 
+			<!-- AI Decision Pipeline Card -->
+			<article id="ai-decision-pipeline-card" aria-labelledby="ai-pipeline-title">
+				<div class="ai-card-header">
+					<h3 id="ai-pipeline-title">AI Decision Pipeline</h3>
+				</div>
+				<div id="ai-pipeline-container" class="pipeline-container">
+					<div class="pipeline-fallback">
+						<span class="pipeline-fallback-icon">ℹ️</span>
+						<span class="pipeline-fallback-text">Using default scraping pipeline.</span>
+					</div>
+				</div>
+			</article>
+
+			<!-- AI Website Compatibility Report Card -->
+			<article id="ai-compatibility-report-card" aria-labelledby="ai-compat-title">
+				<div class="ai-card-header">
+					<h3 id="ai-compat-title">Website Compatibility Report</h3>
+					<span id="ai-compat-badge" class="ai-badge">Standby</span>
+				</div>
+				<div class="compat-grid">
+					<!-- Overall Score -->
+					<div class="compat-metric-card">
+						<span class="compat-label">Overall Score</span>
+						<div class="compat-score-wrapper">
+							<span class="compat-score-value" id="compat-score">0</span>
+							<span class="compat-score-max">/ 100</span>
+						</div>
+					</div>
+					<!-- Compatibility Grade -->
+					<div class="compat-metric-card">
+						<span class="compat-label">Compatibility Grade</span>
+						<span class="compat-grade-badge grade-A" id="compat-grade">-</span>
+					</div>
+					<!-- Rendering Type -->
+					<div class="compat-metric-card">
+						<span class="compat-label">Rendering Type</span>
+						<span class="compat-value" id="compat-rendering">-</span>
+					</div>
+					<!-- JavaScript Complexity -->
+					<div class="compat-metric-card">
+						<span class="compat-label">JavaScript Complexity</span>
+						<span class="compat-value" id="compat-js-complexity">-</span>
+					</div>
+					<!-- Strengths -->
+					<div class="compat-full-width">
+						<span class="compat-label">Strengths</span>
+						<div class="compat-cards-container" id="compat-strengths">None</div>
+					</div>
+					<!-- Limitations -->
+					<div class="compat-full-width">
+						<span class="compat-label">Limitations</span>
+						<div class="compat-cards-container" id="compat-limitations">None</div>
+					</div>
+					<!-- Recommendation -->
+					<div class="compat-full-width">
+						<span class="compat-label">Recommendation</span>
+						<div class="compat-recommendation-box" id="compat-recommendation">Submit a URL to generate website compatibility metrics.</div>
+					</div>
+				</div>
+			</article>
+
 			<article aria-labelledby="page-title-label">
+
+
 				<h3 id="page-title-label">Title</h3>
 				<p id="result-title">No data yet.</p>
 			</article>

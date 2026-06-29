@@ -1,85 +1,218 @@
-"""Main pipeline that orchestrates fetching, AI analysis, extraction, and parsing for ScrapeX."""
+"""Main pipeline that orchestrates fetching, DOM compression, AI analysis, strategy determination, adaptive extraction, and parsing for ScrapeX."""
 
 from __future__ import annotations
 
-from typing import Any, Dict, Optional
+import logging
+from typing import Any, Dict, List, Optional
 
 try:
     from . import fetcher
     from .extractor import extract_content
     from .parser import parse_html
-    from .ai import AIAnalyzer
+    from .ai import AIAnalysis, AIAnalyzer, DOMCompressor, Strategy, StrategyEngine
 except ImportError:
     import fetcher
     from extractor import extract_content
     from parser import parse_html
-    from ai import AIAnalyzer
+    from ai import AIAnalysis, AIAnalyzer, DOMCompressor, Strategy, StrategyEngine
+
+logger = logging.getLogger(__name__)
+
+
+def generate_pipeline_steps(
+    analysis_dict: Optional[Dict[str, Any]],
+    strategy_dict: Optional[Dict[str, Any]],
+    fetch_method: str = "Requests"
+) -> List[Dict[str, str]]:
+    """Automatically generate visual pipeline decision steps explaining the AI strategy decisions.
+
+    Args:
+        analysis_dict: Optional AI analysis dictionary.
+        strategy_dict: Optional strategy dictionary.
+        fetch_method: Actual fetch method executed ('Requests' or 'Playwright').
+
+    Returns:
+        List of dictionaries with title, status, and optional description.
+    """
+    if not strategy_dict:
+        return []
+
+    steps: List[Dict[str, str]] = []
+
+    # Step 1: Classification & Mode Selection
+    website_type = (analysis_dict or {}).get("website_type", "General")
+    mode = strategy_dict.get("scraping_mode", "generic")
+    steps.append({
+        "title": f"Website classified as {website_type}",
+        "status": "success",
+        "description": f"Engine selected '{mode}' strategy optimized for page architecture."
+    })
+
+    # Step 2: Fetching Method Selection
+    if fetch_method == "Playwright":
+        steps.append({
+            "title": "Playwright selected",
+            "status": "success",
+            "description": "Headless browser rendering forced for dynamic JS components."
+        })
+    else:
+        steps.append({
+            "title": "Requests selected",
+            "status": "success",
+            "description": "Fast HTTP requests engine selected for static retrieval."
+        })
+
+    # Step 3: Content Extractor Engine (Trafilatura)
+    if strategy_dict.get("use_trafilatura", True):
+        steps.append({
+            "title": "Trafilatura enabled",
+            "status": "success",
+            "description": "Main body article text extraction enabled."
+        })
+    else:
+        steps.append({
+            "title": "Trafilatura disabled",
+            "status": "success",
+            "description": "Main text filtering bypassed to focus on structured elements."
+        })
+
+    # Step 4: Component Prioritization
+    if strategy_dict.get("prioritize_tables"):
+        steps.append({
+            "title": "Tables prioritized",
+            "status": "success",
+            "description": "Preserving every detected data table."
+        })
+    elif strategy_dict.get("prioritize_headings"):
+        steps.append({
+            "title": "Headings hierarchy prioritized",
+            "status": "success",
+            "description": "Preserving complete H1-H6 heading tree."
+        })
+    elif strategy_dict.get("prioritize_links"):
+        steps.append({
+            "title": "Hyperlinks prioritized",
+            "status": "success",
+            "description": "Preserving all distinct navigation and reference links."
+        })
+
+    return steps
 
 
 def scrape(url: str) -> Optional[Dict[str, Any]]:
-    """Run the AI-guided scraping pipeline and return normalized output.
+    """Run the AI-guided adaptive scraping pipeline and return normalized output.
 
-    Pipeline stages:
-    1. Fetch HTML from the target URL.
-    2. Run AI analysis to determine page architecture and optimal extraction strategy.
-    3. Execute extraction and parsing according to AI recommendation ('article', 'table', or 'mixed').
-    4. Merge all available results into a single dictionary.
+    Execution Order:
+    URL → Fetch HTML → DOM Compression → AI Analysis → Strategy Engine → Adaptive Scraping → Structured Parser → Export
+
+    Adaptive Strategy Decisions:
+    - Playwright Forcing: If strategy.requires_playwright is True and initial fetch was fast HTTP requests,
+      re-fetches content using Playwright to capture dynamic JavaScript elements.
+    - Trafilatura Skipping: If strategy.use_trafilatura is False, skips Trafilatura body text extraction
+      to prevent unwanted editorial filtering on structured catalog or table pages.
+    - Parser Prioritization: Passes strategy flags to parse_html to preserve complete heading hierarchies,
+      hyperlink sets, or data tables according to page requirements.
 
     Args:
         url: Target URL to scrape.
 
     Returns:
-        A dictionary containing normalized scrape results, or None if fetch stage fails.
+        A dictionary containing normalized scrape results, ai_analysis, and strategy, or None if fetch fails.
     """
-    print("Fetching...")
+    # Stage 1: Fetch HTML
+    print("Fetching HTML...")
     html = fetcher.fetch_html(url)
     if html is None:
         print("Error: Failed to fetch HTML.")
         return None
 
-    # Run AI analysis before parsing/extraction
-    print("Running AI analysis...")
-    ai_analysis_dict: Optional[Dict[str, Any]] = None
-    rec_strategy: str = "mixed"
+    # Stage 2: DOM Compression
+    print("Running DOM compression...")
+    dom_summary: Optional[Dict[str, Any]] = None
+    try:
+        compressor = DOMCompressor()
+        dom_summary = compressor.compress(html)
+    except Exception as exc:
+        print(f"Warning: DOM compression failed: {exc}")
 
+    # Stage 3: AI Analysis
+    print("Running AI analysis...")
+    analysis_obj: Optional[AIAnalysis] = None
+    ai_analysis_dict: Optional[Dict[str, Any]] = None
     try:
         analyzer = AIAnalyzer()
-        analysis = analyzer.analyze_page(html, url)
-        ai_analysis_dict = analysis.to_dict()
-        rec_strategy = (analysis.recommended_strategy or analysis.scrape_strategy or "mixed").lower()
+        analysis_obj = analyzer.analyze_page(html, url)
+        ai_analysis_dict = analysis_obj.to_dict()
     except Exception as exc:
-        print(f"Warning: AI analysis failed during pipeline execution: {exc}")
+        print(f"Warning: AI analysis failed: {exc}")
 
-    print(f"AI Recommended Strategy: {rec_strategy}")
+    # Stage 4: Strategy Engine Determination
+    print("Evaluating scraping strategy...")
+    strategy_obj: Optional[Strategy] = None
+    strategy_dict: Optional[Dict[str, Any]] = None
 
+    if analysis_obj or ai_analysis_dict:
+        try:
+            engine = StrategyEngine()
+            strategy_obj = engine.determine_strategy(
+                analysis=analysis_obj or ai_analysis_dict,
+                dom_summary=dom_summary
+            )
+            strategy_dict = strategy_obj.to_dict()
+        except Exception as exc:
+            print(f"Warning: Strategy engine evaluation failed: {exc}")
+
+    # Stage 5: Strategy Logging
+    if strategy_obj:
+        website_type = (ai_analysis_dict or {}).get("website_type", "Unknown")
+        mode = strategy_obj.scraping_mode
+        playwright_str = str(strategy_obj.requires_playwright)
+        tables_str = "High Priority" if strategy_obj.prioritize_tables else "Standard"
+        trafilatura_str = "Enabled" if strategy_obj.use_trafilatura else "Disabled"
+
+        print("\n[Strategy]")
+        print(f"Website Type : {website_type}")
+        print(f"Mode         : {mode}")
+        print(f"Playwright   : {playwright_str}")
+        print(f"Tables       : {tables_str}")
+        print(f"Trafilatura  : {trafilatura_str}\n")
+    else:
+        print("\n[Strategy]\nNo AI Strategy available. Operating in fallback mode.\n")
+
+    # Stage 6: Adaptive Scraping
+    # Decision 6a: Force Playwright if required by strategy
+    if strategy_obj and strategy_obj.requires_playwright:
+        current_method = getattr(fetcher, "LAST_FETCH_METHOD", "")
+        if current_method != "Playwright":
+            print("[Adaptive Scraping] Strategy requires Playwright. Forcing Playwright rendering...")
+            pw_html = fetcher.fetch_with_playwright(url)
+            if pw_html:
+                html = pw_html
+                fetcher.LAST_FETCH_METHOD = "Playwright"
+
+    # Decision 6b: Execute or skip Trafilatura extraction
     extracted: Optional[Dict[str, str]] = None
-    parsed: Dict[str, Any] = {}
+    use_trafilatura = strategy_obj.use_trafilatura if strategy_obj else True
 
-    # Always execute HTML DOM parser to capture structured elements (tables, headings, links)
+    if use_trafilatura:
+        print("[Adaptive Scraping] Running Trafilatura main content extractor...")
+        try:
+            extracted = extract_content(html)
+        except Exception as exc:
+            print(f"Warning: Content extraction failed: {exc}")
+    else:
+        print("[Adaptive Scraping] Trafilatura disabled by strategy. Skipping content extractor.")
+
+    # Stage 7: Structured Parser Execution
+    print("Running structured parser...")
+    parsed: Dict[str, Any] = {}
     try:
-        parsed = parse_html(html) or {}
+        parsed = parse_html(html, strategy=strategy_dict) or {}
     except Exception as exc:
         print(f"Warning: Parser failed: {exc}")
         parsed = {}
 
-    # Execute text extraction based on AI recommendation
-    if "table" in rec_strategy and "article" not in rec_strategy:
-        print("Strategy: Table focus. Prioritizing structured DOM elements...")
-        # For pure table strategy, run extractor only if text content is missing
-        if not parsed.get("paragraphs"):
-            try:
-                extracted = extract_content(html)
-            except Exception as exc:
-                print(f"Warning: Extractor fallback failed: {exc}")
-    else:
-        # For article or mixed focus, run content extractor for clean body text
-        print("Strategy: Article/Mixed focus. Running content extractor...")
-        try:
-            extracted = extract_content(html)
-        except Exception as exc:
-            print(f"Warning: Extractor failed: {exc}")
-
-    # Decide clean text
+    # Stage 8: Result Merging & Export Preparation
     if extracted and extracted.get("text"):
         clean_text = extracted["text"]
     else:
@@ -100,7 +233,15 @@ def scrape(url: str) -> Optional[Dict[str, Any]]:
     if ai_analysis_dict:
         result["ai_analysis"] = ai_analysis_dict
 
-    print("Done.")
+    if strategy_dict:
+        result["strategy"] = strategy_dict
+        result["pipeline_steps"] = generate_pipeline_steps(
+            ai_analysis_dict,
+            strategy_dict,
+            getattr(fetcher, "LAST_FETCH_METHOD", "Requests")
+        )
+
+    print("Pipeline execution complete.")
     return result
 
 
@@ -113,7 +254,9 @@ def _print_summary(result: Dict[str, Any]) -> None:
     print(f"Paragraphs count: {len(result.get('paragraphs', []))}")
     print(f"Links count: {len(result.get('links', []))}")
     print(f"Tables count: {len(result.get('tables', []))}")
-    if "ai_analysis" in result:
+    if "strategy" in result:
+        print(f"Scraping Strategy: {result['strategy'].get('scraping_mode', 'N/A')}")
+    elif "ai_analysis" in result:
         print(f"AI Strategy: {result['ai_analysis'].get('recommended_strategy', 'N/A')}")
 
 

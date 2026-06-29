@@ -1001,4 +1001,293 @@ section[aria-label="Export Options"]:hover {
   background-color: #ccfbf1;
   color: #115e59;
 }
+
+/* ----------------------------------------------------
+   AI Decision Pipeline Visualization Component
+   ---------------------------------------------------- */
+#ai-decision-pipeline-card {
+  background-color: var(--card-color);
+  border: 1px solid var(--line);
+  border-radius: var(--border-radius);
+  padding: 24px;
+  margin-top: 24px;
+  margin-bottom: 24px;
+  box-shadow: var(--outer-shadow);
+  transition: box-shadow 0.3s ease, transform 0.3s ease;
+}
+
+#ai-decision-pipeline-card:hover {
+  box-shadow: var(--outer-shadow-hover);
+}
+
+.pipeline-container {
+  margin-top: 20px;
+}
+
+.pipeline-fallback {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 20px;
+  background-color: var(--bg-color);
+  border-radius: var(--border-radius-sm);
+  border: 1px solid var(--line);
+  box-shadow: var(--inner-shadow);
+  color: var(--text-secondary);
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.pipeline-fallback-icon {
+  font-size: 1.2rem;
+}
+
+.pipeline-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.pipeline-step {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  position: relative;
+}
+
+.step-left {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 32px;
+}
+
+.step-icon-box {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background-color: var(--bg-color);
+  color: var(--accent-indigo);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: var(--button-shadow);
+  border: 1px solid var(--line);
+  z-index: 2;
+  transition: transform 0.2s ease;
+}
+
+.pipeline-step.success .step-icon-box {
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: #ffffff;
+  border: none;
+  box-shadow: 0 4px 10px rgba(16, 185, 129, 0.3);
+}
+
+.step-connector {
+  width: 3px;
+  flex: 1;
+  min-height: 28px;
+  background: linear-gradient(to bottom, #10b981, var(--line));
+  margin-top: 4px;
+  margin-bottom: 4px;
+  border-radius: 2px;
+}
+
+.step-content {
+  padding-bottom: 20px;
+  flex: 1;
+}
+
+.step-title {
+  margin: 4px 0 2px 0;
+  font-size: 0.98rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.step-description {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  line-height: 1.45;
+}
+
+/* ----------------------------------------------------
+   AI Website Compatibility Report Component
+   ---------------------------------------------------- */
+#ai-compatibility-report-card {
+  background-color: var(--card-color);
+  border: 1px solid var(--line);
+  border-radius: var(--border-radius);
+  padding: 24px;
+  margin-top: 24px;
+  margin-bottom: 24px;
+  box-shadow: var(--outer-shadow);
+  transition: box-shadow 0.3s ease;
+}
+
+#ai-compatibility-report-card:hover {
+  box-shadow: var(--outer-shadow-hover);
+}
+
+.compat-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-top: 20px;
+}
+
+@media (max-width: 840px) {
+  .compat-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 480px) {
+  .compat-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.compat-metric-card {
+  background-color: var(--bg-color);
+  border: 1px solid var(--line);
+  border-radius: var(--border-radius-sm);
+  padding: 16px;
+  box-shadow: var(--inner-shadow);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.compat-label {
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.compat-score-wrapper {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.compat-score-value {
+  font-size: 1.8rem;
+  font-weight: 800;
+  color: var(--accent-indigo);
+  line-height: 1;
+}
+
+.compat-score-max {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--text-light);
+}
+
+.compat-value {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.compat-grade-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  font-size: 1.4rem;
+  font-weight: 800;
+  color: #ffffff;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.compat-grade-badge.grade-A {
+  background: linear-gradient(135deg, #10b981, #059669);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+}
+
+.compat-grade-badge.grade-B {
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+.compat-grade-badge.grade-C {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+}
+
+.compat-grade-badge.grade-D {
+  background: linear-gradient(135deg, #e11d48, #dc2626);
+  box-shadow: 0 4px 12px rgba(225, 29, 72, 0.3);
+}
+
+.compat-full-width {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.compat-cards-container {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.compat-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 16px;
+  border-radius: var(--border-radius-sm);
+  font-size: 0.9rem;
+  font-weight: 600;
+  line-height: 1.45;
+}
+
+.compat-card.strength {
+  background-color: rgba(16, 185, 129, 0.08);
+  border: 1px solid rgba(16, 185, 129, 0.25);
+  color: #047857;
+}
+
+.compat-card.limitation {
+  background-color: rgba(245, 158, 11, 0.08);
+  border: 1px solid rgba(245, 158, 11, 0.25);
+  color: #b45309;
+}
+
+.compat-card.limitation.info {
+  background-color: rgba(59, 130, 246, 0.08);
+  border: 1px solid rgba(59, 130, 246, 0.25);
+  color: #1d4ed8;
+}
+
+.compat-card-icon {
+  font-size: 1.05rem;
+  line-height: 1;
+}
+
+.compat-recommendation-box {
+  background-color: var(--bg-color);
+  border: 1px solid var(--line);
+  border-radius: var(--border-radius-sm);
+  padding: 16px 20px;
+  box-shadow: var(--inner-shadow);
+  color: var(--text-primary);
+  font-size: 0.92rem;
+  font-weight: 600;
+  line-height: 1.5;
+  border-left: 4px solid var(--accent-indigo);
+}
+
+
 

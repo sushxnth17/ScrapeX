@@ -37,6 +37,13 @@ class AIAnalysis:
         warnings (List[str]): Potential challenges or anti-scraping measures identified on the page.
         summary (str): Brief overview summary of the page architecture and structural layout.
         main_content_selector (str): Optional/legacy CSS selector for extracting main body content.
+        overall_score (int): Overall compatibility rating (0 to 100).
+        compatibility_grade (str): Letter grade representing scraping ease ('A', 'B', 'C', 'D').
+        rendering_type (str): Web page rendering paradigm (e.g., 'Mostly Static', 'Server-Side Rendered', 'Single Page Application').
+        javascript_complexity (str): Level of client-side scripting interaction required ('Low', 'Medium', 'High', 'Critical').
+        strengths (List[str]): Key architectural advantages for content extraction.
+        limitations (List[str]): Potential scraping hurdles or anti-extraction constraints.
+        recommendation (str): Actionable intelligence recommendation for extraction pipelines.
     """
     website_type: str
     framework: str
@@ -47,6 +54,13 @@ class AIAnalysis:
     warnings: List[str] = field(default_factory=list)
     summary: str = ""
     main_content_selector: str = "body"
+    overall_score: int = 85
+    compatibility_grade: str = "A"
+    rendering_type: str = "Mostly Static"
+    javascript_complexity: str = "Low"
+    strengths: List[str] = field(default_factory=list)
+    limitations: List[str] = field(default_factory=list)
+    recommendation: str = "Optimal for automated extraction."
 
     @property
     def scrape_strategy(self) -> str:
@@ -65,6 +79,13 @@ class AIAnalysis:
             "warnings": self.warnings,
             "summary": self.summary,
             "main_content_selector": self.main_content_selector,
+            "overall_score": self.overall_score,
+            "compatibility_grade": self.compatibility_grade,
+            "rendering_type": self.rendering_type,
+            "javascript_complexity": self.javascript_complexity,
+            "strengths": self.strengths,
+            "limitations": self.limitations,
+            "recommendation": self.recommendation,
         }
 
 
@@ -124,8 +145,9 @@ Instructions:
 2. If the frontend framework or technology cannot be confirmed via meta tags, script source tags, or DOM indicators, set "framework" to "Unknown".
 3. "content_confidence" and "table_confidence" must be numeric floating-point values between 0.0 and 1.0.
 4. "requires_javascript" must be a boolean (true or false).
-5. Identify any warnings or scraping obstacles such as "Login required", "Paywall detected", "Anti-bot protection", or low content confidence.
-6. Output strictly raw JSON matching the exact schema below. Do NOT use markdown code blocks (e.g., do not use ```json ... ```), and do NOT provide explanations or conversating text before or after the JSON object.
+5. "overall_score" must be an integer between 0 and 100. "compatibility_grade" must be one of "A", "B", "C", "D".
+6. Identify key architectural strengths, limitations, rendering_type, javascript_complexity, and recommendation for scraping pipelines.
+7. Output strictly raw JSON matching the exact schema below. Do NOT use markdown code blocks (e.g., do not use ```json ... ```), and do NOT provide explanations or conversating text before or after the JSON object.
 
 Required Schema:
 {{
@@ -136,7 +158,14 @@ Required Schema:
   "requires_javascript": false,
   "recommended_strategy": "",
   "warnings": [],
-  "summary": ""
+  "summary": "",
+  "overall_score": 90,
+  "compatibility_grade": "A",
+  "rendering_type": "Mostly Static",
+  "javascript_complexity": "Low",
+  "strengths": [],
+  "limitations": [],
+  "recommendation": ""
 }}"""
         return prompt.strip()
 
@@ -146,17 +175,6 @@ Required Schema:
         
         Implements timeout, retry logic (retries once on failure), strict JSON output format,
         and graceful error handling.
-        
-        Args:
-            prompt (str): The user prompt or analysis content to send.
-            system_prompt (Optional[str]): System instructions for the model.
-            
-        Returns:
-            str: Raw JSON string response from the LLM.
-            
-        Raises:
-            AIAnalysisError: If the API call fails after retries or returns invalid data.
-            ConfigurationError: If the Groq API key is missing.
         """
         api_key = self.api_key or get_groq_api_key()
 
@@ -185,7 +203,6 @@ Required Schema:
 
         last_exception: Optional[Exception] = None
 
-        # Retry once on failure (up to 2 total attempts)
         for attempt in range(2):
             try:
                 response = requests.post(url, headers=headers, json=payload, timeout=self.timeout)
@@ -212,22 +229,13 @@ Required Schema:
                     f"{'Retrying once...' if attempt == 0 else 'No more retries.'}"
                 )
                 if attempt == 0:
-                    time.sleep(1.0)  # Short backoff before retry
+                    time.sleep(1.0)
 
         raise AIAnalysisError(f"Groq API communication failed after retry: {last_exception}") from last_exception
 
     def parse_response(self, response: Union[str, Dict[str, Any]]) -> AIAnalysis:
         """
         Parse raw LLM response (JSON string or pre-parsed dictionary) into an AIAnalysis dataclass.
-        
-        Args:
-            response (Union[str, Dict[str, Any]]): The raw text or dictionary response returned by the AI provider.
-            
-        Returns:
-            AIAnalysis: A validated and structured analysis object.
-            
-        Raises:
-            ValueError: If the response cannot be parsed or lacks required fields.
         """
         if isinstance(response, str):
             clean_response = response.strip()
@@ -251,7 +259,6 @@ Required Schema:
         rec_strat = str(data.get("recommended_strategy") or data.get("scrape_strategy") or "Standard HTML parsing")
         warnings_list = list(data.get("warnings", []))
 
-        # Synthesize standard warning cards if supported by metrics and indicators
         framework_str = str(data.get("framework", "Unknown"))
         if framework_str != "Unknown" and framework_str != "Standard HTML/CSS":
             if not any(framework_str.lower() in w.lower() or "appears to use" in w.lower() for w in warnings_list):
@@ -265,6 +272,53 @@ Required Schema:
         if table_conf < 0.2 and not any("table" in w.lower() for w in warnings_list):
             warnings_list.append("No semantic HTML tables detected.")
 
+        # Validation and safe fallbacks for compatibility report metrics
+        try:
+            overall_score = int(data.get("overall_score", 0))
+        except (ValueError, TypeError):
+            overall_score = 0
+
+        if overall_score <= 0:
+            base = int((content_conf * 60) + (table_conf * 20))
+            overall_score = base + 20 if not bool(data.get("requires_javascript")) else base + 10
+            overall_score = max(35, min(98, overall_score))
+
+        comp_grade = str(data.get("compatibility_grade", "")).upper().strip()
+        if comp_grade not in ["A", "B", "C", "D"]:
+            if overall_score >= 85:
+                comp_grade = "A"
+            elif overall_score >= 70:
+                comp_grade = "B"
+            elif overall_score >= 50:
+                comp_grade = "C"
+            else:
+                comp_grade = "D"
+
+        rendering_type = str(data.get("rendering_type") or ("Dynamic SPA" if data.get("requires_javascript") else "Mostly Static"))
+        js_complexity = str(data.get("javascript_complexity") or ("High" if data.get("requires_javascript") else "Low"))
+
+        strengths_list = [str(s) for s in data.get("strengths", []) if s]
+        if not strengths_list:
+            if content_conf > 0.7:
+                strengths_list.append("Clean semantic HTML structure with high text readability.")
+            if not data.get("requires_javascript"):
+                strengths_list.append("Static page rendering accessible via high-speed HTTP requests.")
+            if table_conf > 0.5:
+                strengths_list.append("Structured data tables detected for extraction.")
+            if not strengths_list:
+                strengths_list.append("Standard web page structure.")
+
+        limitations_list = [str(l) for l in data.get("limitations", []) if l]
+        if not limitations_list:
+            if data.get("requires_javascript"):
+                limitations_list.append("Requires headless browser execution for client-side JS rendering.")
+            if content_conf < 0.5:
+                limitations_list.append("Mixed text and navigation layout may reduce extraction precision.")
+            if not limitations_list:
+                limitations_list.append("No critical scraping limitations identified.")
+
+        recommendation_str = str(data.get("recommendation") or f"Execute '{rec_strat}' extraction for optimal performance.")
+
         return AIAnalysis(
             website_type=str(data.get("website_type", "Unknown")),
             framework=framework_str,
@@ -275,19 +329,18 @@ Required Schema:
             warnings=warnings_list,
             summary=str(data.get("summary", "")),
             main_content_selector=str(data.get("main_content_selector", "body")),
+            overall_score=overall_score,
+            compatibility_grade=comp_grade,
+            rendering_type=rendering_type,
+            javascript_complexity=js_complexity,
+            strengths=strengths_list,
+            limitations=limitations_list,
+            recommendation=recommendation_str,
         )
 
     def analyze_page(self, html: str, url: str, title: str = "") -> AIAnalysis:
         """
         Execute full architectural analysis on a target web page using Groq AI.
-        
-        Args:
-            html (str): Raw or processed HTML content of the web page.
-            url (str): Target page URL.
-            title (str): Target page title.
-            
-        Returns:
-            AIAnalysis: Structured analysis results for the web page.
         """
         prompt = self.build_prompt(html, url, title)
         
@@ -305,5 +358,12 @@ Required Schema:
                 recommended_strategy="Standard HTML extraction (Fallback)",
                 warnings=[f"AI Analysis notice: {str(err)}"],
                 summary=f"Fallback analysis generated due to AI processing failure: {err}",
-                main_content_selector="body"
+                main_content_selector="body",
+                overall_score=50,
+                compatibility_grade="C",
+                rendering_type="Unknown / Fallback",
+                javascript_complexity="Medium",
+                strengths=["Basic HTML fallback parser available."],
+                limitations=["AI architectural analysis was unavailable."],
+                recommendation="Proceed with standard HTML extraction."
             )

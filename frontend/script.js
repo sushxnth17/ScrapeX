@@ -101,6 +101,126 @@ function populateAIAnalysis(aiData) {
 			warningsContainer.appendChild(successCard);
 		}
 	}
+
+	// Populate Website Compatibility Report
+	const compatBadge = document.getElementById("ai-compat-badge");
+	if (compatBadge) {
+		compatBadge.textContent = "Evaluated";
+		compatBadge.classList.add("active");
+	}
+
+	const scoreEl = document.getElementById("compat-score");
+	if (scoreEl) scoreEl.textContent = aiData.overall_score !== undefined ? aiData.overall_score : 85;
+
+	const gradeEl = document.getElementById("compat-grade");
+	if (gradeEl) {
+		const grade = (aiData.compatibility_grade || "A").toUpperCase();
+		gradeEl.textContent = grade;
+		gradeEl.className = `compat-grade-badge grade-${grade}`;
+	}
+
+	const renderingEl = document.getElementById("compat-rendering");
+	if (renderingEl) renderingEl.textContent = aiData.rendering_type || "Mostly Static";
+
+	const jsCompEl = document.getElementById("compat-js-complexity");
+	if (jsCompEl) jsCompEl.textContent = aiData.javascript_complexity || "Low";
+
+	const strengthsContainer = document.getElementById("compat-strengths");
+	if (strengthsContainer) {
+		strengthsContainer.innerHTML = "";
+		const strengths = aiData.strengths || [];
+		if (strengths.length > 0) {
+			strengths.forEach(item => {
+				const card = document.createElement("div");
+				card.className = "compat-card strength";
+				card.innerHTML = `<span class="compat-card-icon">✓</span><span class="compat-card-text">${escapeHtml(item)}</span>`;
+				strengthsContainer.appendChild(card);
+			});
+		} else {
+			strengthsContainer.innerHTML = `<div class="compat-card strength"><span class="compat-card-icon">✓</span><span class="compat-card-text">Standard web page content layout.</span></div>`;
+		}
+	}
+
+	const limitationsContainer = document.getElementById("compat-limitations");
+	if (limitationsContainer) {
+		limitationsContainer.innerHTML = "";
+		const limitations = aiData.limitations || [];
+		if (limitations.length > 0) {
+			limitations.forEach(item => {
+				const card = document.createElement("div");
+				card.className = "compat-card limitation";
+				card.innerHTML = `<span class="compat-card-icon">⚠️</span><span class="compat-card-text">${escapeHtml(item)}</span>`;
+				limitationsContainer.appendChild(card);
+			});
+		} else {
+			limitationsContainer.innerHTML = `<div class="compat-card limitation info"><span class="compat-card-icon">ℹ️</span><span class="compat-card-text">No critical extraction limitations identified.</span></div>`;
+		}
+	}
+
+	const recBox = document.getElementById("compat-recommendation");
+	if (recBox) {
+		recBox.textContent = aiData.recommendation || "Proceed with recommended scraping strategy for optimal data retrieval.";
+	}
+}
+
+
+// Helper to escape HTML text
+function escapeHtml(str) {
+	if (!str) return "";
+	return String(str)
+		.replace(/&/g, "&amp;")
+		.replace(/</g, "&lt;")
+		.replace(/>/g, "&gt;")
+		.replace(/"/g, "&quot;")
+		.replace(/'/g, "&#039;");
+}
+
+// Render AI Decision Pipeline visualization component
+function renderDecisionPipeline(pipelineSteps) {
+	const container = document.getElementById("ai-pipeline-container");
+	if (!container) return;
+
+	container.innerHTML = "";
+
+	if (!pipelineSteps || !Array.isArray(pipelineSteps) || pipelineSteps.length === 0) {
+		const fallbackEl = document.createElement("div");
+		fallbackEl.className = "pipeline-fallback";
+		fallbackEl.innerHTML = `
+			<span class="pipeline-fallback-icon">ℹ️</span>
+			<span class="pipeline-fallback-text">Using default scraping pipeline.</span>
+		`;
+		container.appendChild(fallbackEl);
+		return;
+	}
+
+	const listEl = document.createElement("div");
+	listEl.className = "pipeline-list";
+
+	pipelineSteps.forEach((step, index) => {
+		const stepEl = document.createElement("div");
+		stepEl.className = `pipeline-step ${step.status || "success"}`;
+
+		const isLast = index === pipelineSteps.length - 1;
+
+		stepEl.innerHTML = `
+			<div class="step-left">
+				<div class="step-icon-box">
+					<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+						<polyline points="20 6 9 17 4 12"></polyline>
+					</svg>
+				</div>
+				${!isLast ? '<div class="step-connector"></div>' : ''}
+			</div>
+			<div class="step-content">
+				<h4 class="step-title">${escapeHtml(step.title || "")}</h4>
+				${step.description ? `<p class="step-description">${escapeHtml(step.description)}</p>` : ''}
+			</div>
+		`;
+
+		listEl.appendChild(stepEl);
+	});
+
+	container.appendChild(listEl);
 }
 
 // Handle form submit
@@ -120,6 +240,7 @@ form.addEventListener("submit", async (e) => {
 		statusBadge.textContent = "Analyzing...";
 		statusBadge.classList.remove("active");
 	}
+	renderDecisionPipeline(null);
 
 	// Trigger AI Analysis in parallel with scraping
 	const analyzePromise = fetch(`${API_BASE_URL}/analyze`, {
@@ -165,6 +286,9 @@ form.addEventListener("submit", async (e) => {
 			return;
 		}
 
+		// Render AI Decision Pipeline visualization
+		renderDecisionPipeline(data.pipeline_steps);
+
 		// Fill scraping UI
 		titleEl.textContent = data.title || "No title";
 		lengthEl.textContent = data.content_length || 0;
@@ -176,6 +300,7 @@ form.addEventListener("submit", async (e) => {
 		previewEl.textContent = data.clean_text
 			? data.clean_text.slice(0, 300) + "..."
 			: "No preview available";
+
 
 		// Render Extracted Headings
 		const headingsContainer = document.getElementById("extracted-headings-container");
