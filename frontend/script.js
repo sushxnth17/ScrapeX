@@ -75,29 +75,34 @@ function populateAIAnalysis(aiData) {
 	if (warningsContainer) {
 		warningsContainer.innerHTML = "";
 		const warnings = aiData.warnings || [];
+		const iconInfo = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-info"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>`;
+		const iconWarn = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-alert-triangle"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" x2="12" y1="9" y2="13"/><line x1="12" x2="12.01" y1="17" y2="17"/></svg>`;
+		const iconLock = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-lock"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>`;
+		const iconCheck = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-check"><polyline points="20 6 9 17 4 12"/></svg>`;
+
 		if (warnings.length > 0) {
 			warnings.forEach(warn => {
 				const card = document.createElement("div");
 				const lower = warn.toLowerCase();
 				let type = "warning";
-				let icon = "⚠️";
+				let icon = iconWarn;
 
 				if (lower.includes("appears to use") || lower.includes("react") || lower.includes("vue") || lower.includes("angular") || lower.includes("framework")) {
 					type = "info";
-					icon = "ℹ️";
+					icon = iconInfo;
 				} else if (lower.includes("login") || lower.includes("paywall") || lower.includes("captcha") || lower.includes("error") || lower.includes("failed")) {
 					type = "danger";
-					icon = "🔒";
+					icon = iconLock;
 				}
 
 				card.className = `warning-card ${type}`;
-				card.innerHTML = `<span class="warning-icon">${icon}</span><span class="warning-text">${warn}</span>`;
+				card.innerHTML = `<span class="warning-icon">${icon}</span><span class="warning-text">${escapeHtml(warn)}</span>`;
 				warningsContainer.appendChild(card);
 			});
 		} else {
 			const successCard = document.createElement("div");
 			successCard.className = "warning-card success";
-			successCard.innerHTML = `<span class="warning-icon">✓</span><span class="warning-text">No scraping obstacles or anti-scraping protections detected.</span>`;
+			successCard.innerHTML = `<span class="warning-icon">${iconCheck}</span><span class="warning-text">No scraping obstacles or anti-scraping protections detected.</span>`;
 			warningsContainer.appendChild(successCard);
 		}
 	}
@@ -125,6 +130,10 @@ function populateAIAnalysis(aiData) {
 	const jsCompEl = document.getElementById("compat-js-complexity");
 	if (jsCompEl) jsCompEl.textContent = aiData.javascript_complexity || "Low";
 
+	const iconCheck = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-check"><polyline points="20 6 9 17 4 12"/></svg>`;
+	const iconWarn = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-alert-triangle"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" x2="12" y1="9" y2="13"/><line x1="12" x2="12.01" y1="17" y2="17"/></svg>`;
+	const iconInfo = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-info"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>`;
+
 	const strengthsContainer = document.getElementById("compat-strengths");
 	if (strengthsContainer) {
 		strengthsContainer.innerHTML = "";
@@ -133,11 +142,11 @@ function populateAIAnalysis(aiData) {
 			strengths.forEach(item => {
 				const card = document.createElement("div");
 				card.className = "compat-card strength";
-				card.innerHTML = `<span class="compat-card-icon">✓</span><span class="compat-card-text">${escapeHtml(item)}</span>`;
+				card.innerHTML = `<span class="compat-card-icon">${iconCheck}</span><span class="compat-card-text">${escapeHtml(item)}</span>`;
 				strengthsContainer.appendChild(card);
 			});
 		} else {
-			strengthsContainer.innerHTML = `<div class="compat-card strength"><span class="compat-card-icon">✓</span><span class="compat-card-text">Standard web page content layout.</span></div>`;
+			strengthsContainer.innerHTML = `<div class="compat-card strength"><span class="compat-card-icon">${iconCheck}</span><span class="compat-card-text">Standard web page content layout.</span></div>`;
 		}
 	}
 
@@ -149,11 +158,11 @@ function populateAIAnalysis(aiData) {
 			limitations.forEach(item => {
 				const card = document.createElement("div");
 				card.className = "compat-card limitation";
-				card.innerHTML = `<span class="compat-card-icon">⚠️</span><span class="compat-card-text">${escapeHtml(item)}</span>`;
+				card.innerHTML = `<span class="compat-card-icon">${iconWarn}</span><span class="compat-card-text">${escapeHtml(item)}</span>`;
 				limitationsContainer.appendChild(card);
 			});
 		} else {
-			limitationsContainer.innerHTML = `<div class="compat-card limitation info"><span class="compat-card-icon">ℹ️</span><span class="compat-card-text">No critical extraction limitations identified.</span></div>`;
+			limitationsContainer.innerHTML = `<div class="compat-card limitation info"><span class="compat-card-icon">${iconInfo}</span><span class="compat-card-text">No critical extraction limitations identified.</span></div>`;
 		}
 	}
 
@@ -182,11 +191,13 @@ function renderDecisionPipeline(pipelineSteps) {
 
 	container.innerHTML = "";
 
+	const iconInfo = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-info"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>`;
+
 	if (!pipelineSteps || !Array.isArray(pipelineSteps) || pipelineSteps.length === 0) {
 		const fallbackEl = document.createElement("div");
 		fallbackEl.className = "pipeline-fallback";
 		fallbackEl.innerHTML = `
-			<span class="pipeline-fallback-icon">ℹ️</span>
+			<span class="pipeline-fallback-icon">${iconInfo}</span>
 			<span class="pipeline-fallback-text">Using default scraping pipeline.</span>
 		`;
 		container.appendChild(fallbackEl);
@@ -205,7 +216,7 @@ function renderDecisionPipeline(pipelineSteps) {
 		stepEl.innerHTML = `
 			<div class="step-left">
 				<div class="step-icon-box">
-					<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+					<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-check">
 						<polyline points="20 6 9 17 4 12"></polyline>
 					</svg>
 				</div>
