@@ -45,15 +45,26 @@ function populateAIAnalysis(aiData) {
 	document.getElementById("ai-website-type").textContent = aiData.website_type || "Unknown";
 	document.getElementById("ai-framework").textContent = aiData.framework || "Unknown";
 
+	const updateProgressBar = (fillEl, valEl, value) => {
+		if (valEl) valEl.textContent = `${value}%`;
+		if (fillEl) {
+			fillEl.style.width = `${value}%`;
+			fillEl.classList.remove("conf-green", "conf-yellow", "conf-red");
+			if (value >= 90) {
+				fillEl.classList.add("conf-green");
+			} else if (value >= 70) {
+				fillEl.classList.add("conf-yellow");
+			} else {
+				fillEl.classList.add("conf-red");
+			}
+		}
+	};
+
 	const contentConf = Math.round((aiData.content_confidence || 0) * 100);
-	document.getElementById("ai-content-confidence").textContent = `${contentConf}%`;
-	const contentFill = document.getElementById("ai-content-fill");
-	if (contentFill) contentFill.style.width = `${contentConf}%`;
+	updateProgressBar(document.getElementById("ai-content-fill"), document.getElementById("ai-content-confidence"), contentConf);
 
 	const tableConf = Math.round((aiData.table_confidence || 0) * 100);
-	document.getElementById("ai-table-confidence").textContent = `${tableConf}%`;
-	const tableFill = document.getElementById("ai-table-fill");
-	if (tableFill) tableFill.style.width = `${tableConf}%`;
+	updateProgressBar(document.getElementById("ai-table-fill"), document.getElementById("ai-table-confidence"), tableConf);
 
 	const reqJsEl = document.getElementById("ai-requires-js");
 	if (reqJsEl) {
@@ -114,8 +125,17 @@ function populateAIAnalysis(aiData) {
 		compatBadge.classList.add("active");
 	}
 
+	const overallScore = aiData.overall_score !== undefined ? aiData.overall_score : 85;
 	const scoreEl = document.getElementById("compat-score");
-	if (scoreEl) scoreEl.textContent = aiData.overall_score !== undefined ? aiData.overall_score : 85;
+	if (scoreEl) scoreEl.textContent = overallScore;
+	const scoreFill = document.getElementById("compat-score-fill");
+	if (scoreFill) {
+		scoreFill.style.width = `${overallScore}%`;
+		scoreFill.classList.remove("conf-green", "conf-yellow", "conf-red");
+		if (overallScore >= 90) scoreFill.classList.add("conf-green");
+		else if (overallScore >= 70) scoreFill.classList.add("conf-yellow");
+		else scoreFill.classList.add("conf-red");
+	}
 
 	const gradeEl = document.getElementById("compat-grade");
 	if (gradeEl) {

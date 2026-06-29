@@ -1016,19 +1016,36 @@ pre {
 
 .ai-progress-bar {
   flex: 1;
-  height: 8px;
+  height: 10px;
   background-color: var(--card-color);
-  border-radius: 4px;
+  border-radius: 6px;
   box-shadow: var(--inner-shadow);
   overflow: hidden;
+  margin-top: 4px;
 }
 
 .ai-progress-fill {
   height: 100%;
   width: 0%;
   background: var(--color-ai-gradient);
-  border-radius: 4px;
-  transition: width 0.4s ease;
+  border-radius: 6px;
+  transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1), background 0.3s ease, box-shadow 0.3s ease;
+}
+
+/* Value-based Dynamic Threshold Colors */
+.ai-progress-fill.conf-green {
+  background: linear-gradient(90deg, #10b981, #059669);
+  box-shadow: 0 0 8px rgba(16, 185, 129, 0.4);
+}
+
+.ai-progress-fill.conf-yellow {
+  background: linear-gradient(90deg, #f59e0b, #d97706);
+  box-shadow: 0 0 8px rgba(245, 158, 11, 0.4);
+}
+
+.ai-progress-fill.conf-red {
+  background: linear-gradient(90deg, #e11d48, #dc2626);
+  box-shadow: 0 0 8px rgba(225, 29, 72, 0.4);
 }
 
 .ai-text-block {
