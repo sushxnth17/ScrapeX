@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import logging
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
 try:
     from . import fetcher
@@ -17,6 +17,86 @@ except ImportError:
     from ai import AIAnalysis, AIAnalyzer, DOMCompressor, Strategy, StrategyEngine
 
 logger = logging.getLogger(__name__)
+
+
+def generate_pipeline_steps(
+    analysis_dict: Optional[Dict[str, Any]],
+    strategy_dict: Optional[Dict[str, Any]],
+    fetch_method: str = "Requests"
+) -> List[Dict[str, str]]:
+    """Automatically generate visual pipeline decision steps explaining the AI strategy decisions.
+
+    Args:
+        analysis_dict: Optional AI analysis dictionary.
+        strategy_dict: Optional strategy dictionary.
+        fetch_method: Actual fetch method executed ('Requests' or 'Playwright').
+
+    Returns:
+        List of dictionaries with title, status, and optional description.
+    """
+    if not strategy_dict:
+        return []
+
+    steps: List[Dict[str, str]] = []
+
+    # Step 1: Classification & Mode Selection
+    website_type = (analysis_dict or {}).get("website_type", "General")
+    mode = strategy_dict.get("scraping_mode", "generic")
+    steps.append({
+        "title": f"Website classified as {website_type}",
+        "status": "success",
+        "description": f"Engine selected '{mode}' strategy optimized for page architecture."
+    })
+
+    # Step 2: Fetching Method Selection
+    if fetch_method == "Playwright":
+        steps.append({
+            "title": "Playwright selected",
+            "status": "success",
+            "description": "Headless browser rendering forced for dynamic JS components."
+        })
+    else:
+        steps.append({
+            "title": "Requests selected",
+            "status": "success",
+            "description": "Fast HTTP requests engine selected for static retrieval."
+        })
+
+    # Step 3: Content Extractor Engine (Trafilatura)
+    if strategy_dict.get("use_trafilatura", True):
+        steps.append({
+            "title": "Trafilatura enabled",
+            "status": "success",
+            "description": "Main body article text extraction enabled."
+        })
+    else:
+        steps.append({
+            "title": "Trafilatura disabled",
+            "status": "success",
+            "description": "Main text filtering bypassed to focus on structured elements."
+        })
+
+    # Step 4: Component Prioritization
+    if strategy_dict.get("prioritize_tables"):
+        steps.append({
+            "title": "Tables prioritized",
+            "status": "success",
+            "description": "Preserving every detected data table."
+        })
+    elif strategy_dict.get("prioritize_headings"):
+        steps.append({
+            "title": "Headings hierarchy prioritized",
+            "status": "success",
+            "description": "Preserving complete H1-H6 heading tree."
+        })
+    elif strategy_dict.get("prioritize_links"):
+        steps.append({
+            "title": "Hyperlinks prioritized",
+            "status": "success",
+            "description": "Preserving all distinct navigation and reference links."
+        })
+
+    return steps
 
 
 def scrape(url: str) -> Optional[Dict[str, Any]]:
@@ -155,6 +235,11 @@ def scrape(url: str) -> Optional[Dict[str, Any]]:
 
     if strategy_dict:
         result["strategy"] = strategy_dict
+        result["pipeline_steps"] = generate_pipeline_steps(
+            ai_analysis_dict,
+            strategy_dict,
+            getattr(fetcher, "LAST_FETCH_METHOD", "Requests")
+        )
 
     print("Pipeline execution complete.")
     return result
