@@ -19,15 +19,15 @@
   --border-radius: 20px;
   --border-radius-sm: 12px;
   
-  /* Neomorphism Shadow Tokens */
-  --outer-shadow: 8px 8px 16px rgba(163, 177, 198, 0.4), -8px -8px 16px rgba(255, 255, 255, 0.8);
-  --outer-shadow-hover: 12px 12px 24px rgba(163, 177, 198, 0.5), -12px -12px 24px rgba(255, 255, 255, 0.9);
+  /* Crisp Soft Neomorphism Shadow Tokens */
+  --outer-shadow: 4px 4px 10px rgba(163, 177, 198, 0.28), -4px -4px 10px rgba(255, 255, 255, 0.75);
+  --outer-shadow-hover: 6px 6px 14px rgba(163, 177, 198, 0.38), -6px -6px 14px rgba(255, 255, 255, 0.85);
   
-  --inner-shadow: inset 3px 3px 6px rgba(163, 177, 198, 0.45), inset -3px -3px 6px rgba(255, 255, 255, 0.85);
-  --inner-shadow-focus: inset 4px 4px 8px rgba(163, 177, 198, 0.55), inset -4px -4px 8px rgba(255, 255, 255, 0.95);
+  --inner-shadow: inset 2px 2px 5px rgba(163, 177, 198, 0.35), inset -2px -2px 5px rgba(255, 255, 255, 0.8);
+  --inner-shadow-focus: inset 3px 3px 6px rgba(163, 177, 198, 0.45), inset -3px -3px 6px rgba(255, 255, 255, 0.9);
   
-  --button-shadow: 4px 4px 8px rgba(163, 177, 198, 0.4), -4px -4px 8px rgba(255, 255, 255, 0.8);
-  --button-shadow-active: inset 3px 3px 6px rgba(163, 177, 198, 0.4), inset -3px -3px 6px rgba(255, 255, 255, 0.8);
+  --button-shadow: 3px 3px 6px rgba(163, 177, 198, 0.3), -3px -3px 6px rgba(255, 255, 255, 0.75);
+  --button-shadow-active: inset 2px 2px 4px rgba(163, 177, 198, 0.35), inset -2px -2px 4px rgba(255, 255, 255, 0.75);
   
   --ring: rgba(79, 70, 229, 0.18);
   --line: rgba(226, 232, 240, 0.7);
@@ -77,11 +77,11 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 /* ----------------------------------------------------
-   Hero Section
+   Hero Section & Header Layout
    ---------------------------------------------------- */
 .hero-section {
   display: grid;
-  grid-template-columns: 1.15fr 0.85fr;
+  grid-template-columns: 1.1fr 0.9fr;
   gap: 32px;
   align-items: center;
 }
@@ -148,22 +148,22 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 /* ----------------------------------------------------
-   Main Layout Wrapper
+   Main Layout Container
    ---------------------------------------------------- */
 main {
-  width: min(900px, 100%);
+  width: min(1140px, 100%);
   background-color: var(--card-color);
   border-radius: 24px;
   box-shadow: var(--outer-shadow);
-  padding: 35px;
+  padding: 36px;
   margin: 0 auto;
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 28px;
 }
 
 /* ----------------------------------------------------
-   Neomorphic Typography & Headings System
+   Neomorphic Typography & Headings
    ---------------------------------------------------- */
 h2, h3 {
   margin: 0;
@@ -191,8 +191,29 @@ h3 {
 }
 
 /* ----------------------------------------------------
-   Neomorphic Cards (section, article)
+   Dashboard Grid & Cards Layout
    ---------------------------------------------------- */
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  align-items: start;
+  margin-top: 20px;
+}
+
+.dashboard-col-left,
+.dashboard-col-right {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+@media (max-width: 960px) {
+  .dashboard-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 section, article {
   background-color: var(--card-color);
   border-radius: var(--border-radius);
@@ -207,8 +228,9 @@ section:hover, article:hover {
 }
 
 #results {
-  display: grid;
-  gap: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
   background: transparent;
   border: 0;
   padding: 0;
@@ -217,6 +239,12 @@ section:hover, article:hover {
 
 #results:hover {
   box-shadow: none;
+}
+
+/* Override margins for nested grid articles */
+.dashboard-grid article {
+  margin-top: 0 !important;
+  margin-bottom: 0 !important;
 }
 
 /* ----------------------------------------------------
@@ -326,67 +354,66 @@ button[type="submit"]:hover {
 }
 
 /* ----------------------------------------------------
-   Results Sections
+   Content Statistics Cards Grid
    ---------------------------------------------------- */
 #result-title {
   margin: 5px 0 0;
   font-family: var(--font-sans);
   color: var(--text-primary);
-  font-size: 1.1rem;
+  font-size: 1.05rem;
   font-weight: 700;
   letter-spacing: var(--letter-spacing-card);
 }
 
 .stats-grid {
-  margin-top: 15px;
+  margin-top: 12px;
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  gap: 16px;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
 }
 
-@media (max-width: 760px) {
+@media (max-width: 640px) {
   .stats-grid {
     grid-template-columns: repeat(2, 1fr);
   }
 }
 
-@media (max-width: 480px) {
+@media (max-width: 420px) {
   .stats-grid {
     grid-template-columns: 1fr;
   }
 }
 
 .metric-card {
-  background-color: var(--card-color);
+  background-color: var(--bg-color);
   border: 1px solid var(--line);
-  border-radius: var(--border-radius);
-  padding: 16px 12px;
+  border-radius: var(--border-radius-sm);
+  padding: 14px 12px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  gap: 16px;
-  box-shadow: var(--outer-shadow);
-  transition: transform 0.25s ease, box-shadow 0.25s ease;
+  gap: 12px;
+  box-shadow: var(--inner-shadow);
+  transition: transform 0.2s ease;
   height: 100%;
 }
 
 .metric-card:hover {
-  transform: translateY(-4px);
-  box-shadow: var(--outer-shadow-hover);
+  transform: translateY(-2px);
 }
 
 .metric-header {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
 }
 
 .metric-icon-box {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 32px;
+  width: 28px;
+  height: 28px;
   border-radius: 50%;
   border: 1px solid var(--line);
   box-shadow: var(--inner-shadow);
@@ -419,13 +446,13 @@ button[type="submit"]:hover {
 }
 
 .metric-icon {
-  width: 18px;
-  height: 18px;
+  width: 16px;
+  height: 16px;
 }
 
 .metric-label {
   font-family: var(--font-sans);
-  font-size: var(--font-size-small);
+  font-size: 0.72rem;
   font-weight: 700;
   color: var(--text-secondary);
   letter-spacing: var(--letter-spacing-label);
@@ -435,12 +462,12 @@ button[type="submit"]:hover {
 .metric-body {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 4px;
 }
 
 .metric-number {
   font-family: var(--font-sans);
-  font-size: 1.8rem;
+  font-size: 1.6rem;
   font-weight: 800;
   color: var(--accent-indigo);
   line-height: 1;
@@ -449,14 +476,14 @@ button[type="submit"]:hover {
 
 .metric-caption {
   font-family: var(--font-sans);
-  font-size: 0.75rem;
+  font-size: 0.72rem;
   color: var(--text-light);
   font-weight: 400;
-  line-height: 1.35;
+  line-height: 1.3;
 }
 
 /* ----------------------------------------------------
-   Content Preview Code Block
+   Content Preview & Tab Panels
    ---------------------------------------------------- */
 pre {
   margin: 12px 0 0;
@@ -483,18 +510,19 @@ pre {
   letter-spacing: var(--letter-spacing-card);
 }
 
-section[aria-label="Export Options"] {
+.export-section {
   display: flex;
   gap: 14px;
   flex-wrap: wrap;
-  border: 0;
-  background: transparent;
-  padding: 0;
-  box-shadow: none;
+  border: 0 !important;
+  background: transparent !important;
+  padding: 0 !important;
+  box-shadow: none !important;
+  margin-top: 12px;
 }
 
-section[aria-label="Export Options"]:hover {
-  box-shadow: none;
+.export-section:hover {
+  box-shadow: none !important;
 }
 
 /* ----------------------------------------------------
@@ -647,7 +675,7 @@ section[aria-label="Export Options"]:hover {
   display: flex;
   gap: 8px;
   border-bottom: 2px solid var(--line);
-  margin: 30px 0 20px;
+  margin: 20px 0 16px;
   padding-bottom: 0;
   overflow-x: auto;
   scrollbar-width: none;
@@ -710,7 +738,7 @@ section[aria-label="Export Options"]:hover {
 
 .tab-panels {
   position: relative;
-  min-height: 200px;
+  min-height: 180px;
 }
 
 .tab-panel {
@@ -791,11 +819,11 @@ section[aria-label="Export Options"]:hover {
 }
 
 /* ----------------------------------------------------
-   Responsive Layout Adjustment
+   Responsive Layout Adjustments
    ---------------------------------------------------- */
 @media (max-width: 760px) {
   body {
-    padding: 24px 12px;
+    padding: 20px 10px;
   }
 
   main {
@@ -805,7 +833,7 @@ section[aria-label="Export Options"]:hover {
 
   .hero-section {
     grid-template-columns: 1fr;
-    gap: 24px;
+    gap: 20px;
   }
 
   .hero-left {
@@ -825,15 +853,10 @@ section[aria-label="Export Options"]:hover {
 }
 
 /* ----------------------------------------------------
-   AI Analysis Neomorphic Card Styles
+   AI Analysis Card Styles
    ---------------------------------------------------- */
 #ai-analysis-card {
   position: relative;
-  background-color: var(--card-color);
-  border-radius: var(--border-radius);
-  padding: 24px;
-  border: 1px solid var(--line);
-  box-shadow: var(--outer-shadow);
 }
 
 .ai-card-header {
@@ -842,7 +865,7 @@ section[aria-label="Export Options"]:hover {
   align-items: center;
   border-bottom: 2px solid var(--line);
   padding-bottom: 12px;
-  margin-bottom: 20px;
+  margin-bottom: 16px;
 }
 
 .ai-card-header h3 {
@@ -876,8 +899,8 @@ section[aria-label="Export Options"]:hover {
 
 .ai-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 16px;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 14px;
 }
 
 .ai-grid-full {
@@ -886,7 +909,7 @@ section[aria-label="Export Options"]:hover {
 
 .ai-metric-item {
   background: var(--bg-color);
-  padding: 16px;
+  padding: 14px;
   border-radius: var(--border-radius-sm);
   box-shadow: var(--inner-shadow);
   border: 1px solid var(--line);
@@ -1017,7 +1040,6 @@ section[aria-label="Export Options"]:hover {
   line-height: 1.45;
 }
 
-/* Colored Info Card Variants */
 .warning-card.info {
   background-color: rgba(59, 130, 246, 0.08);
   border-color: rgba(59, 130, 246, 0.25);
@@ -1061,30 +1083,15 @@ section[aria-label="Export Options"]:hover {
 /* ----------------------------------------------------
    AI Decision Pipeline Visualization Component
    ---------------------------------------------------- */
-#ai-decision-pipeline-card {
-  background-color: var(--card-color);
-  border: 1px solid var(--line);
-  border-radius: var(--border-radius);
-  padding: 24px;
-  margin-top: 24px;
-  margin-bottom: 24px;
-  box-shadow: var(--outer-shadow);
-  transition: box-shadow 0.3s ease, transform 0.3s ease;
-}
-
-#ai-decision-pipeline-card:hover {
-  box-shadow: var(--outer-shadow-hover);
-}
-
 .pipeline-container {
-  margin-top: 20px;
+  margin-top: 16px;
 }
 
 .pipeline-fallback {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 16px 20px;
+  padding: 14px 18px;
   background-color: var(--bg-color);
   border-radius: var(--border-radius-sm);
   border: 1px solid var(--line);
@@ -1092,11 +1099,11 @@ section[aria-label="Export Options"]:hover {
   font-family: var(--font-sans);
   color: var(--text-secondary);
   font-weight: 600;
-  font-size: 0.95rem;
+  font-size: 0.92rem;
 }
 
 .pipeline-fallback-icon {
-  font-size: 1.2rem;
+  font-size: 1.1rem;
 }
 
 .pipeline-list {
@@ -1108,7 +1115,7 @@ section[aria-label="Export Options"]:hover {
 .pipeline-step {
   display: flex;
   align-items: flex-start;
-  gap: 16px;
+  gap: 14px;
   position: relative;
 }
 
@@ -1116,12 +1123,12 @@ section[aria-label="Export Options"]:hover {
   display: flex;
   flex-direction: column;
   align-items: center;
-  min-width: 32px;
+  min-width: 28px;
 }
 
 .step-icon-box {
-  width: 32px;
-  height: 32px;
+  width: 28px;
+  height: 28px;
   border-radius: 50%;
   background-color: var(--bg-color);
   color: var(--accent-indigo);
@@ -1144,7 +1151,7 @@ section[aria-label="Export Options"]:hover {
 .step-connector {
   width: 3px;
   flex: 1;
-  min-height: 28px;
+  min-height: 24px;
   background: linear-gradient(to bottom, #10b981, var(--line));
   margin-top: 4px;
   margin-bottom: 4px;
@@ -1152,14 +1159,14 @@ section[aria-label="Export Options"]:hover {
 }
 
 .step-content {
-  padding-bottom: 20px;
+  padding-bottom: 16px;
   flex: 1;
 }
 
 .step-title {
-  margin: 4px 0 2px 0;
+  margin: 3px 0 2px 0;
   font-family: var(--font-sans);
-  font-size: 0.98rem;
+  font-size: 0.95rem;
   font-weight: 700;
   letter-spacing: var(--letter-spacing-card);
   color: var(--text-primary);
@@ -1168,7 +1175,7 @@ section[aria-label="Export Options"]:hover {
 .step-description {
   margin: 0;
   font-family: var(--font-sans);
-  font-size: 0.85rem;
+  font-size: 0.84rem;
   color: var(--text-secondary);
   line-height: var(--line-height-body);
 }
@@ -1176,35 +1183,14 @@ section[aria-label="Export Options"]:hover {
 /* ----------------------------------------------------
    AI Website Compatibility Report Component
    ---------------------------------------------------- */
-#ai-compatibility-report-card {
-  background-color: var(--card-color);
-  border: 1px solid var(--line);
-  border-radius: var(--border-radius);
-  padding: 24px;
-  margin-top: 24px;
-  margin-bottom: 24px;
-  box-shadow: var(--outer-shadow);
-  transition: box-shadow 0.3s ease;
-}
-
-#ai-compatibility-report-card:hover {
-  box-shadow: var(--outer-shadow-hover);
-}
-
 .compat-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 16px;
-  margin-top: 20px;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  margin-top: 16px;
 }
 
-@media (max-width: 840px) {
-  .compat-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-
-@media (max-width: 480px) {
+@media (max-width: 540px) {
   .compat-grid {
     grid-template-columns: 1fr;
   }
@@ -1214,12 +1200,12 @@ section[aria-label="Export Options"]:hover {
   background-color: var(--bg-color);
   border: 1px solid var(--line);
   border-radius: var(--border-radius-sm);
-  padding: 16px;
+  padding: 14px;
   box-shadow: var(--inner-shadow);
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  gap: 10px;
+  gap: 8px;
 }
 
 .compat-label {
@@ -1234,12 +1220,12 @@ section[aria-label="Export Options"]:hover {
 .compat-score-wrapper {
   display: flex;
   align-items: baseline;
-  gap: 6px;
+  gap: 4px;
 }
 
 .compat-score-value {
   font-family: var(--font-sans);
-  font-size: 1.8rem;
+  font-size: 1.6rem;
   font-weight: 800;
   color: var(--accent-indigo);
   line-height: 1;
@@ -1248,14 +1234,14 @@ section[aria-label="Export Options"]:hover {
 
 .compat-score-max {
   font-family: var(--font-sans);
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   font-weight: 700;
   color: var(--text-light);
 }
 
 .compat-value {
   font-family: var(--font-sans);
-  font-size: 1rem;
+  font-size: 0.95rem;
   font-weight: 700;
   color: var(--text-primary);
   letter-spacing: var(--letter-spacing-card);
@@ -1265,11 +1251,11 @@ section[aria-label="Export Options"]:hover {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 42px;
-  height: 42px;
-  border-radius: 12px;
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
   font-family: var(--font-sans);
-  font-size: 1.4rem;
+  font-size: 1.3rem;
   font-weight: 800;
   color: #ffffff;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
@@ -1299,24 +1285,24 @@ section[aria-label="Export Options"]:hover {
   grid-column: 1 / -1;
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  margin-top: 6px;
+  gap: 6px;
+  margin-top: 4px;
 }
 
 .compat-cards-container {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
 }
 
 .compat-card {
   display: flex;
   align-items: flex-start;
-  gap: 12px;
-  padding: 12px 16px;
+  gap: 10px;
+  padding: 10px 14px;
   border-radius: var(--border-radius-sm);
   font-family: var(--font-sans);
-  font-size: 0.9rem;
+  font-size: 0.88rem;
   font-weight: 600;
   line-height: var(--line-height-body);
 }
@@ -1340,7 +1326,7 @@ section[aria-label="Export Options"]:hover {
 }
 
 .compat-card-icon {
-  font-size: 1.05rem;
+  font-size: 1rem;
   line-height: 1;
 }
 
@@ -1348,11 +1334,11 @@ section[aria-label="Export Options"]:hover {
   background-color: var(--bg-color);
   border: 1px solid var(--line);
   border-radius: var(--border-radius-sm);
-  padding: 16px 20px;
+  padding: 14px 16px;
   box-shadow: var(--inner-shadow);
   font-family: var(--font-sans);
   color: var(--text-primary);
-  font-size: 0.92rem;
+  font-size: 0.9rem;
   font-weight: 600;
   line-height: var(--line-height-body);
   border-left: 4px solid var(--accent-indigo);

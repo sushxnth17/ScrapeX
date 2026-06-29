@@ -5,11 +5,12 @@
 	<meta charset="UTF-8" />
 	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 	<title>ScrapeX</title>
-	<link rel="stylesheet" href="style.css?v=3" />
+	<link rel="stylesheet" href="style.css?v=4" />
 </head>
 
 <body>
 	<main>
+		<!-- Top Section: Header & URL Analysis Form -->
 		<section class="hero-section" aria-labelledby="hero-title">
 			<div class="hero-left">
 				<div class="logo-badge"> ScrapeX</div>
@@ -21,244 +22,254 @@
 					<label for="url-input">Website URL</label>
 					<div class="input-wrapper">
 						<input id="url-input" name="url" type="url" placeholder="https://example.com" required />
-						<button type="submit">Scrape</button>
+						<button type="submit">Analyze & Scrape</button>
 					</div>
 				</form>
 				<p id="loading-message" role="status" aria-live="polite"></p>
 			</div>
 		</section>
 
+		<!-- Main Dashboard Overview Section -->
 		<section id="results" aria-labelledby="results-title">
-			<h2 id="results-title">Results</h2>
+			<h2 id="results-title">Dashboard Overview</h2>
 
-			<!-- AI Website Analysis Card -->
-			<article id="ai-analysis-card" aria-labelledby="ai-analysis-title">
-				<div class="ai-card-header">
-					<h3 id="ai-analysis-title">AI Website Analysis</h3>
-					<span id="ai-status-badge" class="ai-badge">Standby</span>
-				</div>
-				<div class="ai-grid">
-					<!-- Website Type -->
-					<div class="ai-metric-item">
-						<span class="ai-label">Website Type</span>
-						<span class="ai-value" id="ai-website-type">-</span>
-					</div>
-					<!-- Framework -->
-					<div class="ai-metric-item">
-						<span class="ai-label">Framework</span>
-						<span class="ai-value" id="ai-framework">-</span>
-					</div>
-					<!-- Content Confidence -->
-					<div class="ai-metric-item">
-						<span class="ai-label">Content Confidence</span>
-						<div class="ai-confidence-box">
-							<span class="ai-value" id="ai-content-confidence">0%</span>
-							<div class="ai-progress-bar"><div class="ai-progress-fill" id="ai-content-fill"></div></div>
+			<!-- Two-Column Responsive Dashboard Grid -->
+			<div class="dashboard-grid">
+				<!-- Left Column: Architectural Intelligence & Compatibility -->
+				<div class="dashboard-col-left">
+					<!-- AI Website Analysis Card -->
+					<article id="ai-analysis-card" aria-labelledby="ai-analysis-title">
+						<div class="ai-card-header">
+							<h3 id="ai-analysis-title">AI Website Analysis</h3>
+							<span id="ai-status-badge" class="ai-badge">Standby</span>
 						</div>
-					</div>
-					<!-- Table Confidence -->
-					<div class="ai-metric-item">
-						<span class="ai-label">Table Confidence</span>
-						<div class="ai-confidence-box">
-							<span class="ai-value" id="ai-table-confidence">0%</span>
-							<div class="ai-progress-bar"><div class="ai-progress-fill" id="ai-table-fill"></div></div>
-						</div>
-					</div>
-					<!-- Requires JavaScript -->
-					<div class="ai-metric-item">
-						<span class="ai-label">Requires JavaScript</span>
-						<span class="ai-value-badge" id="ai-requires-js">-</span>
-					</div>
-					<!-- Recommended Strategy -->
-					<div class="ai-metric-item ai-grid-full">
-						<span class="ai-label">Recommended Strategy</span>
-						<span class="ai-value highlight-strategy" id="ai-strategy">-</span>
-					</div>
-					<!-- Summary -->
-					<div class="ai-metric-item ai-grid-full">
-						<span class="ai-label">Summary</span>
-						<p class="ai-text-block" id="ai-summary">Submit a URL to analyze web page architecture and intelligence features.</p>
-					</div>
-					<!-- Warnings -->
-					<div class="ai-metric-item ai-grid-full" id="ai-warnings-wrapper">
-						<span class="ai-label">Warnings</span>
-						<div class="ai-warnings-container" id="ai-warnings">None</div>
-					</div>
-				</div>
-			</article>
-
-			<!-- AI Decision Pipeline Card -->
-			<article id="ai-decision-pipeline-card" aria-labelledby="ai-pipeline-title">
-				<div class="ai-card-header">
-					<h3 id="ai-pipeline-title">AI Decision Pipeline</h3>
-				</div>
-				<div id="ai-pipeline-container" class="pipeline-container">
-					<div class="pipeline-fallback">
-						<span class="pipeline-fallback-icon">ℹ️</span>
-						<span class="pipeline-fallback-text">Using default scraping pipeline.</span>
-					</div>
-				</div>
-			</article>
-
-			<!-- AI Website Compatibility Report Card -->
-			<article id="ai-compatibility-report-card" aria-labelledby="ai-compat-title">
-				<div class="ai-card-header">
-					<h3 id="ai-compat-title">Website Compatibility Report</h3>
-					<span id="ai-compat-badge" class="ai-badge">Standby</span>
-				</div>
-				<div class="compat-grid">
-					<!-- Overall Score -->
-					<div class="compat-metric-card">
-						<span class="compat-label">Overall Score</span>
-						<div class="compat-score-wrapper">
-							<span class="compat-score-value" id="compat-score">0</span>
-							<span class="compat-score-max">/ 100</span>
-						</div>
-					</div>
-					<!-- Compatibility Grade -->
-					<div class="compat-metric-card">
-						<span class="compat-label">Compatibility Grade</span>
-						<span class="compat-grade-badge grade-A" id="compat-grade">-</span>
-					</div>
-					<!-- Rendering Type -->
-					<div class="compat-metric-card">
-						<span class="compat-label">Rendering Type</span>
-						<span class="compat-value" id="compat-rendering">-</span>
-					</div>
-					<!-- JavaScript Complexity -->
-					<div class="compat-metric-card">
-						<span class="compat-label">JavaScript Complexity</span>
-						<span class="compat-value" id="compat-js-complexity">-</span>
-					</div>
-					<!-- Strengths -->
-					<div class="compat-full-width">
-						<span class="compat-label">Strengths</span>
-						<div class="compat-cards-container" id="compat-strengths">None</div>
-					</div>
-					<!-- Limitations -->
-					<div class="compat-full-width">
-						<span class="compat-label">Limitations</span>
-						<div class="compat-cards-container" id="compat-limitations">None</div>
-					</div>
-					<!-- Recommendation -->
-					<div class="compat-full-width">
-						<span class="compat-label">Recommendation</span>
-						<div class="compat-recommendation-box" id="compat-recommendation">Submit a URL to generate website compatibility metrics.</div>
-					</div>
-				</div>
-			</article>
-
-			<article aria-labelledby="page-title-label">
-
-
-				<h3 id="page-title-label">Title</h3>
-				<p id="result-title">No data yet.</p>
-			</article>
-
-			<article aria-labelledby="stats-label">
-				<h3 id="stats-label">Content Stats</h3>
-				<div class="stats-grid">
-					<!-- Card 1: Content Length -->
-					<div class="metric-card">
-						<div class="metric-header">
-							<div class="metric-icon-box length-icon">
-								<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="metric-icon">
-									<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-									<polyline points="14 2 14 8 20 8"></polyline>
-									<line x1="16" y1="13" x2="8" y2="13"></line>
-									<line x1="16" y1="17" x2="8" y2="17"></line>
-									<polyline points="10 9 9 9 8 9"></polyline>
-								</svg>
+						<div class="ai-grid">
+							<!-- Website Type -->
+							<div class="ai-metric-item">
+								<span class="ai-label">Website Type</span>
+								<span class="ai-value" id="ai-website-type">-</span>
 							</div>
-							<span class="metric-label">Content Length</span>
-						</div>
-						<div class="metric-body">
-							<span class="metric-number" id="stat-length">0</span>
-							<span class="metric-caption">Total characters extracted</span>
-						</div>
-					</div>
-
-					<!-- Card 2: Headings -->
-					<div class="metric-card">
-						<div class="metric-header">
-							<div class="metric-icon-box headings-icon">
-								<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="metric-icon">
-									<path d="M4 12h16"></path>
-									<path d="M4 18V6"></path>
-									<path d="M20 18V6"></path>
-								</svg>
+							<!-- Framework -->
+							<div class="ai-metric-item">
+								<span class="ai-label">Framework</span>
+								<span class="ai-value" id="ai-framework">-</span>
 							</div>
-							<span class="metric-label">Headings</span>
-						</div>
-						<div class="metric-body">
-							<span class="metric-number" id="stat-headings">0</span>
-							<span class="metric-caption">Structural headings found</span>
-						</div>
-					</div>
-
-					<!-- Card 3: Paragraphs -->
-					<div class="metric-card">
-						<div class="metric-header">
-							<div class="metric-icon-box paragraphs-icon">
-								<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="metric-icon">
-									<line x1="17" y1="10" x2="3" y2="10"></line>
-									<line x1="21" y1="6" x2="3" y2="6"></line>
-									<line x1="21" y1="14" x2="3" y2="14"></line>
-									<line x1="17" y1="18" x2="3" y2="18"></line>
-								</svg>
+							<!-- Content Confidence -->
+							<div class="ai-metric-item">
+								<span class="ai-label">Content Confidence</span>
+								<div class="ai-confidence-box">
+									<span class="ai-value" id="ai-content-confidence">0%</span>
+									<div class="ai-progress-bar"><div class="ai-progress-fill" id="ai-content-fill"></div></div>
+								</div>
 							</div>
-							<span class="metric-label">Paragraphs</span>
-						</div>
-						<div class="metric-body">
-							<span class="metric-number" id="stat-paragraphs">0</span>
-							<span class="metric-caption">Text paragraph blocks</span>
-						</div>
-					</div>
-
-					<!-- Card 4: Links -->
-					<div class="metric-card">
-						<div class="metric-header">
-							<div class="metric-icon-box links-icon">
-								<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="metric-icon">
-									<path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
-									<path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
-								</svg>
+							<!-- Table Confidence -->
+							<div class="ai-metric-item">
+								<span class="ai-label">Table Confidence</span>
+								<div class="ai-confidence-box">
+									<span class="ai-value" id="ai-table-confidence">0%</span>
+									<div class="ai-progress-bar"><div class="ai-progress-fill" id="ai-table-fill"></div></div>
+								</div>
 							</div>
-							<span class="metric-label">Links</span>
-						</div>
-						<div class="metric-body">
-							<span class="metric-number" id="stat-links">0</span>
-							<span class="metric-caption">Internal & external links</span>
-						</div>
-					</div>
-
-					<!-- Card 5: Tables -->
-					<div class="metric-card">
-						<div class="metric-header">
-							<div class="metric-icon-box tables-icon">
-								<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="metric-icon">
-									<rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-									<line x1="3" y1="9" x2="21" y2="9"></line>
-									<line x1="3" y1="15" x2="21" y2="15"></line>
-									<line x1="12" y1="3" x2="12" y2="21"></line>
-								</svg>
+							<!-- Requires JavaScript -->
+							<div class="ai-metric-item">
+								<span class="ai-label">Requires JavaScript</span>
+								<span class="ai-value-badge" id="ai-requires-js">-</span>
 							</div>
-							<span class="metric-label">Tables</span>
+							<!-- Recommended Strategy -->
+							<div class="ai-metric-item ai-grid-full">
+								<span class="ai-label">Recommended Strategy</span>
+								<span class="ai-value highlight-strategy" id="ai-strategy">-</span>
+							</div>
+							<!-- Summary -->
+							<div class="ai-metric-item ai-grid-full">
+								<span class="ai-label">Summary</span>
+								<p class="ai-text-block" id="ai-summary">Submit a URL to analyze web page architecture and intelligence features.</p>
+							</div>
+							<!-- Warnings -->
+							<div class="ai-metric-item ai-grid-full" id="ai-warnings-wrapper">
+								<span class="ai-label">Warnings</span>
+								<div class="ai-warnings-container" id="ai-warnings">None</div>
+							</div>
 						</div>
-						<div class="metric-body">
-							<span class="metric-number" id="stat-tables">0</span>
-							<span class="metric-caption">Extracted data tables</span>
+					</article>
+
+					<!-- AI Website Compatibility Report Card -->
+					<article id="ai-compatibility-report-card" aria-labelledby="ai-compat-title">
+						<div class="ai-card-header">
+							<h3 id="ai-compat-title">Website Compatibility Report</h3>
+							<span id="ai-compat-badge" class="ai-badge">Standby</span>
 						</div>
-					</div>
+						<div class="compat-grid">
+							<!-- Overall Score -->
+							<div class="compat-metric-card">
+								<span class="compat-label">Overall Score</span>
+								<div class="compat-score-wrapper">
+									<span class="compat-score-value" id="compat-score">0</span>
+									<span class="compat-score-max">/ 100</span>
+								</div>
+							</div>
+							<!-- Compatibility Grade -->
+							<div class="compat-metric-card">
+								<span class="compat-label">Compatibility Grade</span>
+								<span class="compat-grade-badge grade-A" id="compat-grade">-</span>
+							</div>
+							<!-- Rendering Type -->
+							<div class="compat-metric-card">
+								<span class="compat-label">Rendering Type</span>
+								<span class="compat-value" id="compat-rendering">-</span>
+							</div>
+							<!-- JavaScript Complexity -->
+							<div class="compat-metric-card">
+								<span class="compat-label">JavaScript Complexity</span>
+								<span class="compat-value" id="compat-js-complexity">-</span>
+							</div>
+							<!-- Strengths -->
+							<div class="compat-full-width">
+								<span class="compat-label">Strengths</span>
+								<div class="compat-cards-container" id="compat-strengths">None</div>
+							</div>
+							<!-- Limitations -->
+							<div class="compat-full-width">
+								<span class="compat-label">Limitations</span>
+								<div class="compat-cards-container" id="compat-limitations">None</div>
+							</div>
+							<!-- Recommendation -->
+							<div class="compat-full-width">
+								<span class="compat-label">Recommendation</span>
+								<div class="compat-recommendation-box" id="compat-recommendation">Submit a URL to generate website compatibility metrics.</div>
+							</div>
+						</div>
+					</article>
 				</div>
-			</article>
 
-			<!-- Tabs Navigation -->
+				<!-- Right Column: Decision Pipeline & Extraction Metrics -->
+				<div class="dashboard-col-right">
+					<!-- AI Decision Pipeline Card -->
+					<article id="ai-decision-pipeline-card" aria-labelledby="ai-pipeline-title">
+						<div class="ai-card-header">
+							<h3 id="ai-pipeline-title">AI Decision Pipeline</h3>
+						</div>
+						<div id="ai-pipeline-container" class="pipeline-container">
+							<div class="pipeline-fallback">
+								<span class="pipeline-fallback-icon">ℹ️</span>
+								<span class="pipeline-fallback-text">Using default scraping pipeline.</span>
+							</div>
+						</div>
+					</article>
+
+					<!-- Page Title Article -->
+					<article aria-labelledby="page-title-label">
+						<h3 id="page-title-label">Target Page Title</h3>
+						<p id="result-title">No data yet.</p>
+					</article>
+
+					<!-- Content Statistics Article -->
+					<article aria-labelledby="stats-label">
+						<h3 id="stats-label">Content Statistics</h3>
+						<div class="stats-grid">
+							<!-- Card 1: Content Length -->
+							<div class="metric-card">
+								<div class="metric-header">
+									<div class="metric-icon-box length-icon">
+										<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="metric-icon">
+											<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+											<polyline points="14 2 14 8 20 8"></polyline>
+											<line x1="16" y1="13" x2="8" y2="13"></line>
+											<line x1="16" y1="17" x2="8" y2="17"></line>
+											<polyline points="10 9 9 9 8 9"></polyline>
+										</svg>
+									</div>
+									<span class="metric-label">Content Length</span>
+								</div>
+								<div class="metric-body">
+									<span class="metric-number" id="stat-length">0</span>
+									<span class="metric-caption">Total characters extracted</span>
+								</div>
+							</div>
+
+							<!-- Card 2: Headings -->
+							<div class="metric-card">
+								<div class="metric-header">
+									<div class="metric-icon-box headings-icon">
+										<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="metric-icon">
+											<path d="M4 12h16"></path>
+											<path d="M4 18V6"></path>
+											<path d="M20 18V6"></path>
+										</svg>
+									</div>
+									<span class="metric-label">Headings</span>
+								</div>
+								<div class="metric-body">
+									<span class="metric-number" id="stat-headings">0</span>
+									<span class="metric-caption">Structural headings found</span>
+								</div>
+							</div>
+
+							<!-- Card 3: Paragraphs -->
+							<div class="metric-card">
+								<div class="metric-header">
+									<div class="metric-icon-box paragraphs-icon">
+										<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="metric-icon">
+											<line x1="17" y1="10" x2="3" y2="10"></line>
+											<line x1="21" y1="6" x2="3" y2="6"></line>
+											<line x1="21" y1="14" x2="3" y2="14"></line>
+											<line x1="17" y1="18" x2="3" y2="18"></line>
+										</svg>
+									</div>
+									<span class="metric-label">Paragraphs</span>
+								</div>
+								<div class="metric-body">
+									<span class="metric-number" id="stat-paragraphs">0</span>
+									<span class="metric-caption">Text paragraph blocks</span>
+								</div>
+							</div>
+
+							<!-- Card 4: Links -->
+							<div class="metric-card">
+								<div class="metric-header">
+									<div class="metric-icon-box links-icon">
+										<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="metric-icon">
+											<path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+											<path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+										</svg>
+									</div>
+									<span class="metric-label">Links</span>
+								</div>
+								<div class="metric-body">
+									<span class="metric-number" id="stat-links">0</span>
+									<span class="metric-caption">Internal & external links</span>
+								</div>
+							</div>
+
+							<!-- Card 5: Tables -->
+							<div class="metric-card">
+								<div class="metric-header">
+									<div class="metric-icon-box tables-icon">
+										<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="metric-icon">
+											<rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+											<line x1="3" y1="9" x2="21" y2="9"></line>
+											<line x1="3" y1="15" x2="21" y2="15"></line>
+											<line x1="12" y1="3" x2="12" y2="21"></line>
+										</svg>
+									</div>
+									<span class="metric-label">Tables</span>
+								</div>
+								<div class="metric-body">
+									<span class="metric-number" id="stat-tables">0</span>
+									<span class="metric-caption">Extracted data tables</span>
+								</div>
+							</div>
+						</div>
+					</article>
+				</div>
+			</div>
+
+			<!-- Tabbed Interface Section (Below Dashboard Grid) -->
 			<div class="tabs-nav" role="tablist">
-				<button type="button" class="tab-btn active" role="tab" aria-selected="true" aria-controls="preview-panel">Content Preview</button>
-				<button type="button" class="tab-btn" role="tab" aria-selected="false" aria-controls="headings-panel">Headings</button>
-				<button type="button" class="tab-btn" role="tab" aria-selected="false" aria-controls="links-panel">Links</button>
+				<button type="button" class="tab-btn active" role="tab" aria-selected="true" aria-controls="preview-panel">Content</button>
 				<button type="button" class="tab-btn" role="tab" aria-selected="false" aria-controls="tables-panel">Tables</button>
+				<button type="button" class="tab-btn" role="tab" aria-selected="false" aria-controls="links-panel">Links</button>
+				<button type="button" class="tab-btn" role="tab" aria-selected="false" aria-controls="headings-panel">Headings</button>
 			</div>
 
 			<!-- Tab Panels -->
@@ -269,11 +280,11 @@
 					<pre id="content-preview">Scraped content preview will appear here.</pre>
 				</article>
 
-				<!-- Panel 2: Headings -->
-				<article id="headings-panel" class="tab-panel" aria-labelledby="headings-label" role="tabpanel">
-					<h3 id="headings-label">Extracted Headings</h3>
-					<div id="extracted-headings-container">
-						<p class="no-headings-msg">Scraped headings will appear here.</p>
+				<!-- Panel 2: Tables -->
+				<article id="tables-panel" class="tab-panel" aria-labelledby="tables-label" role="tabpanel">
+					<h3 id="tables-label">Extracted Tables</h3>
+					<div id="extracted-tables-container">
+						<p class="no-tables-msg">Scraped tables will appear here.</p>
 					</div>
 				</article>
 
@@ -285,16 +296,17 @@
 					</div>
 				</article>
 
-				<!-- Panel 4: Tables -->
-				<article id="tables-panel" class="tab-panel" aria-labelledby="tables-label" role="tabpanel">
-					<h3 id="tables-label">Extracted Tables</h3>
-					<div id="extracted-tables-container">
-						<p class="no-tables-msg">Scraped tables will appear here.</p>
+				<!-- Panel 4: Headings -->
+				<article id="headings-panel" class="tab-panel" aria-labelledby="headings-label" role="tabpanel">
+					<h3 id="headings-label">Extracted Headings</h3>
+					<div id="extracted-headings-container">
+						<p class="no-headings-msg">Scraped headings will appear here.</p>
 					</div>
 				</article>
 			</div>
 
-			<section aria-label="Export Options">
+			<!-- Bottom Download Panel -->
+			<section aria-label="Export Options" class="export-section">
 				<button id="download-csv" type="button">Download CSV</button>
 				<button id="download-tables" type="button">Download Tables CSV</button>
 				<button id="download-pdf" type="button">Download PDF</button>
