@@ -349,7 +349,7 @@ form.addEventListener("submit", async (e) => {
 			} else {
 				const noHeadings = document.createElement("p");
 				noHeadings.className = "no-headings-msg";
-				noHeadings.textContent = "No headings found on this page.";
+				noHeadings.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-heading"><path d="M6 12h12"/><path d="M6 20V4"/><path d="M18 20V4"/></svg> <span>No headings found on this page.</span>`;
 				headingsContainer.appendChild(noHeadings);
 			}
 		}
@@ -379,8 +379,9 @@ form.addEventListener("submit", async (e) => {
 				const titleDiv = document.createElement("h4");
 				titleDiv.textContent = `Table ${index + 1}:`;
 				titleDiv.style.margin = "14px 0 6px 0";
-				titleDiv.style.color = "var(--ink)";
-				titleDiv.style.fontFamily = "'Syne', 'Segoe UI', sans-serif";
+				titleDiv.style.color = "var(--color-ai)";
+				titleDiv.style.fontFamily = "var(--font-sans)";
+				titleDiv.style.fontWeight = "700";
 				
 				tablesContainer.appendChild(titleDiv);
 				tablesContainer.appendChild(wrapper);
@@ -388,7 +389,7 @@ form.addEventListener("submit", async (e) => {
 		} else {
 			const noTables = document.createElement("p");
 			noTables.className = "no-tables-msg";
-			noTables.textContent = "No tables found on this page.";
+			noTables.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-table"><path d="M12 3v18"/><path d="M3 12h18"/><rect width="18" height="18" x="3" y="3" rx="2"/></svg> <span>No tables found on this page.</span>`;
 			tablesContainer.appendChild(noTables);
 		}
 
@@ -448,7 +449,7 @@ form.addEventListener("submit", async (e) => {
 		} else {
 			const noLinks = document.createElement("p");
 			noLinks.className = "no-links-msg";
-			noLinks.textContent = "No links found on this page.";
+			noLinks.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-link"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg> <span>No links found on this page.</span>`;
 			linksContainer.appendChild(noLinks);
 		}
 
