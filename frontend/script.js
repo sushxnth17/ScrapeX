@@ -101,7 +101,68 @@ function populateAIAnalysis(aiData) {
 			warningsContainer.appendChild(successCard);
 		}
 	}
+
+	// Populate Website Compatibility Report
+	const compatBadge = document.getElementById("ai-compat-badge");
+	if (compatBadge) {
+		compatBadge.textContent = "Evaluated";
+		compatBadge.classList.add("active");
+	}
+
+	const scoreEl = document.getElementById("compat-score");
+	if (scoreEl) scoreEl.textContent = aiData.overall_score !== undefined ? aiData.overall_score : 85;
+
+	const gradeEl = document.getElementById("compat-grade");
+	if (gradeEl) {
+		const grade = (aiData.compatibility_grade || "A").toUpperCase();
+		gradeEl.textContent = grade;
+		gradeEl.className = `compat-grade-badge grade-${grade}`;
+	}
+
+	const renderingEl = document.getElementById("compat-rendering");
+	if (renderingEl) renderingEl.textContent = aiData.rendering_type || "Mostly Static";
+
+	const jsCompEl = document.getElementById("compat-js-complexity");
+	if (jsCompEl) jsCompEl.textContent = aiData.javascript_complexity || "Low";
+
+	const strengthsContainer = document.getElementById("compat-strengths");
+	if (strengthsContainer) {
+		strengthsContainer.innerHTML = "";
+		const strengths = aiData.strengths || [];
+		if (strengths.length > 0) {
+			strengths.forEach(item => {
+				const card = document.createElement("div");
+				card.className = "compat-card strength";
+				card.innerHTML = `<span class="compat-card-icon">✓</span><span class="compat-card-text">${escapeHtml(item)}</span>`;
+				strengthsContainer.appendChild(card);
+			});
+		} else {
+			strengthsContainer.innerHTML = `<div class="compat-card strength"><span class="compat-card-icon">✓</span><span class="compat-card-text">Standard web page content layout.</span></div>`;
+		}
+	}
+
+	const limitationsContainer = document.getElementById("compat-limitations");
+	if (limitationsContainer) {
+		limitationsContainer.innerHTML = "";
+		const limitations = aiData.limitations || [];
+		if (limitations.length > 0) {
+			limitations.forEach(item => {
+				const card = document.createElement("div");
+				card.className = "compat-card limitation";
+				card.innerHTML = `<span class="compat-card-icon">⚠️</span><span class="compat-card-text">${escapeHtml(item)}</span>`;
+				limitationsContainer.appendChild(card);
+			});
+		} else {
+			limitationsContainer.innerHTML = `<div class="compat-card limitation info"><span class="compat-card-icon">ℹ️</span><span class="compat-card-text">No critical extraction limitations identified.</span></div>`;
+		}
+	}
+
+	const recBox = document.getElementById("compat-recommendation");
+	if (recBox) {
+		recBox.textContent = aiData.recommendation || "Proceed with recommended scraping strategy for optimal data retrieval.";
+	}
 }
+
 
 // Helper to escape HTML text
 function escapeHtml(str) {
