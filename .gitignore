@@ -12,3 +12,4 @@ venv/
 *.pdf
 
 scratch/
+.pytest_cache/
