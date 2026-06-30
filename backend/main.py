@@ -16,6 +16,11 @@ except ImportError:
     from parser import parse_html
     from ai import AIAnalysis, AIAnalyzer, DOMCompressor, Strategy, StrategyEngine
 
+try:
+    from backend.exceptions import ScrapeXError
+except ImportError:
+    from exceptions import ScrapeXError
+
 logger = logging.getLogger(__name__)
 
 
@@ -120,23 +125,20 @@ def scrape(url: str) -> Optional[Dict[str, Any]]:
         A dictionary containing normalized scrape results, ai_analysis, and strategy, or None if fetch fails.
     """
     # Stage 1: Fetch HTML
-    print("Fetching HTML...")
+    logger.info("Fetching HTML...")
     html = fetcher.fetch_html(url)
-    if html is None:
-        print("Error: Failed to fetch HTML.")
-        return None
 
     # Stage 2: DOM Compression
-    print("Running DOM compression...")
+    logger.info("Running DOM compression...")
     dom_summary: Optional[Dict[str, Any]] = None
     try:
         compressor = DOMCompressor()
         dom_summary = compressor.compress(html)
     except Exception as exc:
-        print(f"Warning: DOM compression failed: {exc}")
+        logger.warning("DOM compression failed", exc_info=True)
 
     # Stage 3: AI Analysis
-    print("Running AI analysis...")
+    logger.info("Running AI analysis...")
     analysis_obj: Optional[AIAnalysis] = None
     ai_analysis_dict: Optional[Dict[str, Any]] = None
     try:
@@ -144,10 +146,10 @@ def scrape(url: str) -> Optional[Dict[str, Any]]:
         analysis_obj = analyzer.analyze_page(html, url)
         ai_analysis_dict = analysis_obj.to_dict()
     except Exception as exc:
-        print(f"Warning: AI analysis failed: {exc}")
+        logger.warning("AI analysis failed", exc_info=True)
 
     # Stage 4: Strategy Engine Determination
-    print("Evaluating scraping strategy...")
+    logger.info("Evaluating scraping strategy...")
     strategy_obj: Optional[Strategy] = None
     strategy_dict: Optional[Dict[str, Any]] = None
 
@@ -160,7 +162,7 @@ def scrape(url: str) -> Optional[Dict[str, Any]]:
             )
             strategy_dict = strategy_obj.to_dict()
         except Exception as exc:
-            print(f"Warning: Strategy engine evaluation failed: {exc}")
+            logger.warning("Strategy engine evaluation failed", exc_info=True)
 
     # Stage 5: Strategy Logging
     if strategy_obj:
@@ -170,46 +172,51 @@ def scrape(url: str) -> Optional[Dict[str, Any]]:
         tables_str = "High Priority" if strategy_obj.prioritize_tables else "Standard"
         trafilatura_str = "Enabled" if strategy_obj.use_trafilatura else "Disabled"
 
-        print("\n[Strategy]")
-        print(f"Website Type : {website_type}")
-        print(f"Mode         : {mode}")
-        print(f"Playwright   : {playwright_str}")
-        print(f"Tables       : {tables_str}")
-        print(f"Trafilatura  : {trafilatura_str}\n")
+        logger.info(
+            f"Strategy Determined:\n"
+            f"  Website Type : {website_type}\n"
+            f"  Mode         : {mode}\n"
+            f"  Playwright   : {playwright_str}\n"
+            f"  Tables       : {tables_str}\n"
+            f"  Trafilatura  : {trafilatura_str}"
+        )
     else:
-        print("\n[Strategy]\nNo AI Strategy available. Operating in fallback mode.\n")
+        logger.info("No AI Strategy available. Operating in fallback mode.")
 
     # Stage 6: Adaptive Scraping
     # Decision 6a: Force Playwright if required by strategy
     if strategy_obj and strategy_obj.requires_playwright:
         current_method = getattr(fetcher, "LAST_FETCH_METHOD", "")
         if current_method != "Playwright":
-            print("[Adaptive Scraping] Strategy requires Playwright. Forcing Playwright rendering...")
-            pw_html = fetcher.fetch_with_playwright(url)
-            if pw_html:
-                html = pw_html
-                fetcher.LAST_FETCH_METHOD = "Playwright"
+            logger.info("[Adaptive Scraping] Strategy requires Playwright. Forcing Playwright rendering...")
+            try:
+                pw_html = fetcher.fetch_with_playwright(url)
+                if pw_html:
+                    html = pw_html
+                    fetcher.LAST_FETCH_METHOD = "Playwright"
+            except Exception as exc:
+                logger.warning(f"Playwright forcing failed: {exc}. Reverting to requests HTML.", exc_info=True)
 
     # Decision 6b: Execute or skip Trafilatura extraction
     extracted: Optional[Dict[str, str]] = None
     use_trafilatura = strategy_obj.use_trafilatura if strategy_obj else True
 
     if use_trafilatura:
-        print("[Adaptive Scraping] Running Trafilatura main content extractor...")
+        logger.info("[Adaptive Scraping] Running Trafilatura main content extractor...")
         try:
             extracted = extract_content(html)
         except Exception as exc:
-            print(f"Warning: Content extraction failed: {exc}")
+            logger.warning("Content extraction failed", exc_info=True)
     else:
-        print("[Adaptive Scraping] Trafilatura disabled by strategy. Skipping content extractor.")
+        logger.info("[Adaptive Scraping] Trafilatura disabled by strategy. Skipping content extractor.")
 
     # Stage 7: Structured Parser Execution
-    print("Running structured parser...")
+    logger.info("Running structured parser...")
     parsed: Dict[str, Any] = {}
     try:
         parsed = parse_html(html, strategy=strategy_dict) or {}
     except Exception as exc:
-        print(f"Warning: Parser failed: {exc}")
+        logger.warning("Parser failed", exc_info=True)
         parsed = {}
 
     # Stage 8: Result Merging & Export Preparation
@@ -241,8 +248,9 @@ def scrape(url: str) -> Optional[Dict[str, Any]]:
             getattr(fetcher, "LAST_FETCH_METHOD", "Requests")
         )
 
-    print("Pipeline execution complete.")
+    logger.info("Pipeline execution complete.")
     return result
+
 
 
 def _print_summary(result: Dict[str, Any]) -> None:
@@ -261,16 +269,26 @@ def _print_summary(result: Dict[str, Any]) -> None:
 
 
 if __name__ == "__main__":
+    try:
+        from backend.logging_config import configure_logging
+    except ImportError:
+        from logging_config import configure_logging
+    configure_logging()
     """Interactive test block for the main scraping engine."""
     try:
         user_url = input("Enter URL: ").strip()
         if not user_url:
             print("Error: URL cannot be empty.")
         else:
-            scrape_result = scrape(user_url)
-            if scrape_result is None:
-                print("No result returned.")
-            else:
-                _print_summary(scrape_result)
+            try:
+                scrape_result = scrape(user_url)
+                if scrape_result is None:
+                    print("No result returned.")
+                else:
+                    _print_summary(scrape_result)
+            except ScrapeXError as exc:
+                print(f"Error: {exc.detail}")
+            except Exception as exc:
+                print(f"Unexpected error: {exc}")
     except KeyboardInterrupt:
-        print("\nOperation cancelled by user.")
+        print("\nOperation cancelled by user.")

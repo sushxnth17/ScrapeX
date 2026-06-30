@@ -5,6 +5,15 @@ from __future__ import annotations
 from typing import Any, Dict, List
 
 import pandas as pd
+import logging
+
+logger = logging.getLogger(__name__)
+
+try:
+	from backend.exceptions import CSVExportError
+except ImportError:
+	from exceptions import CSVExportError
+
 
 
 def _normalize_links(raw_links: Any) -> List[Dict[str, str]]:
@@ -61,17 +70,20 @@ def export_to_csv(data: Dict[str, Any], links_filename: str = "links.csv", table
 		links_filename: Destination filename for links.
 		tables_filename: Destination filename for tables.
 	"""
-	payload = data if isinstance(data, dict) else {}
+	try:
+		payload = data if isinstance(data, dict) else {}
 
-	links = _normalize_links(payload.get("links", []))
-	links_df = pd.DataFrame(links, columns=["text", "href"])
-	links_df.to_csv(links_filename, index=False)
-	print(f"Links CSV saved to {links_filename}")
+		links = _normalize_links(payload.get("links", []))
+		links_df = pd.DataFrame(links, columns=["text", "href"])
+		links_df.to_csv(links_filename, index=False)
+		logger.info(f"Links CSV saved to {links_filename}")
 
-	table_rows = _flatten_tables(payload.get("tables", []))
-	if table_rows:
-		tables_df = pd.DataFrame(table_rows)
-	else:
-		tables_df = pd.DataFrame(columns=["table_index", "row_index", "col_1"])
-	tables_df.to_csv(tables_filename, index=False)
-	print(f"Tables CSV saved to {tables_filename}")
+		table_rows = _flatten_tables(payload.get("tables", []))
+		if table_rows:
+			tables_df = pd.DataFrame(table_rows)
+		else:
+			tables_df = pd.DataFrame(columns=["table_index", "row_index", "col_1"])
+		tables_df.to_csv(tables_filename, index=False)
+		logger.info(f"Tables CSV saved to {tables_filename}")
+	except Exception as exc:
+		raise CSVExportError(f"Failed to generate CSV export files: {exc}") from exc

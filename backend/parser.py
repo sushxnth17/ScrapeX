@@ -262,6 +262,11 @@ def parse_html(html: str, strategy: Optional[Dict[str, Any]] = None) -> Dict[str
 
 if __name__ == "__main__":
 	try:
+		from backend.logging_config import configure_logging
+	except ImportError:
+		from logging_config import configure_logging
+	configure_logging()
+	try:
 		url = input("Enter URL to parse: ").strip()
 		if not url:
 			print("Error: URL cannot be empty")

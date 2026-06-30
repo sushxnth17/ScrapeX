@@ -13,9 +13,11 @@ else:
     load_dotenv()
 
 
-class ConfigurationError(Exception):
-    """Custom exception raised when a required configuration or API key is missing or empty."""
-    pass
+try:
+    from backend.exceptions import ConfigurationError
+except ImportError:
+    from exceptions import ConfigurationError
+
 
 
 def get_api_key(key_name: str, provider_name: str) -> str:

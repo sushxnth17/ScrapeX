@@ -2,11 +2,36 @@
 
 from __future__ import annotations
 
+import logging
 from typing import Optional
 
 import requests
 from playwright.sync_api import sync_playwright
 
+try:
+    from backend.exceptions import (
+        ScrapeXError,
+        FetchError,
+        URLValidationError,
+        ConnectionTimeoutError,
+        ConnectionFailedError,
+        HTTPClientError,
+        HTTPServerError,
+        EmptyOrNonHTMLContentError,
+    )
+except ImportError:
+    from exceptions import (
+        ScrapeXError,
+        FetchError,
+        URLValidationError,
+        ConnectionTimeoutError,
+        ConnectionFailedError,
+        HTTPClientError,
+        HTTPServerError,
+        EmptyOrNonHTMLContentError,
+    )
+
+logger = logging.getLogger(__name__)
 
 MIN_HTML_LENGTH = 500
 LAST_FETCH_METHOD = "Unknown"
@@ -30,9 +55,12 @@ def _looks_like_html(html: str) -> bool:
     return "<html" in lower or "<!doctype html" in lower
 
 
-def fetch_with_requests(url: str) -> Optional[str]:
-    """Fetch HTML using requests for fast static-page retrieval."""
-    print(f"Trying requests for: {url}")
+def fetch_with_requests(url: str) -> str:
+    """Fetch HTML using requests for fast static-page retrieval.
+    
+    Raises specific FetchError subclasses on failure.
+    """
+    logger.info(f"Trying requests for: {url}")
     headers = {
         "User-Agent": DEFAULT_USER_AGENT,
         "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
@@ -46,34 +74,40 @@ def fetch_with_requests(url: str) -> Optional[str]:
         response.encoding = response.apparent_encoding
         html = response.text or ""
 
+        # Validate content type
+        content_type = response.headers.get("Content-Type", "").lower()
+        if content_type and not any(t in content_type for t in ["text/html", "application/xhtml+xml"]):
+            raise EmptyOrNonHTMLContentError(f"The target URL did not return a valid HTML document. URL returned non-HTML Content-Type: {content_type}")
+
         if response.status_code >= 500:
-            print(f"Error: HTTP {response.status_code}")
-            return None
+            raise HTTPServerError(response.status_code)
+
+        if response.status_code >= 400:
+            raise HTTPClientError(response.status_code)
 
         # Some sites return challenge pages with non-200 status. If it's valid HTML,
         # pass it through and let parser/extractor decide.
         if _looks_like_html(html):
             if response.status_code != 200:
-                print(f"Warning: Non-200 response ({response.status_code}) but HTML was returned")
+                logger.warning(f"Non-200 response ({response.status_code}) but HTML was returned")
             return html
 
-        print("Requests returned empty or non-HTML content")
-        return None
+        raise EmptyOrNonHTMLContentError("The target URL did not return a valid HTML document. Requests returned empty or non-HTML content")
 
-    except requests.exceptions.Timeout:
-        print("Error: Request timed out (15 seconds)")
-        return None
-    except requests.exceptions.ConnectionError:
-        print("Requests failed, trying Playwright...")
-        return None
+    except requests.exceptions.Timeout as exc:
+        raise ConnectionTimeoutError("Request timed out (15 seconds)") from exc
+    except requests.exceptions.ConnectionError as exc:
+        raise ConnectionFailedError("Failed to connect to the target server. Requests failed to establish connection.") from exc
     except requests.exceptions.RequestException as exc:
-        print(f"Error: {exc}")
-        return None
+        raise FetchError(f"HTTP request failed: {exc}") from exc
 
 
-def fetch_with_playwright(url: str) -> Optional[str]:
-    """Fetch HTML using Playwright for JavaScript-heavy or protected pages."""
-    print(f"Trying Playwright for: {url}")
+def fetch_with_playwright(url: str) -> str:
+    """Fetch HTML using Playwright for JavaScript-heavy or protected pages.
+    
+    Raises specific FetchError subclasses on failure.
+    """
+    logger.info(f"Trying Playwright for: {url}")
     try:
         with sync_playwright() as p:
             browser = p.chromium.launch(
@@ -87,7 +121,14 @@ def fetch_with_playwright(url: str) -> Optional[str]:
             )
             page = context.new_page()
 
-            page.goto(url, timeout=30000, wait_until="domcontentloaded")
+            response = page.goto(url, timeout=30000, wait_until="domcontentloaded")
+            
+            # Validate content type
+            if response:
+                content_type = response.headers.get("content-type", "").lower()
+                if content_type and not any(t in content_type for t in ["text/html", "application/xhtml+xml"]):
+                    raise EmptyOrNonHTMLContentError(f"The target URL did not return a valid HTML document. URL returned non-HTML Content-Type: {content_type}")
+                    
             page.wait_for_timeout(2500)
 
             # Trigger potential lazy-loading sections.
@@ -105,14 +146,17 @@ def fetch_with_playwright(url: str) -> Optional[str]:
             if _looks_like_html(html):
                 return html
 
-            print("Error: Playwright returned empty or non-HTML content")
-            return None
+            raise EmptyOrNonHTMLContentError("The target URL did not return a valid HTML document. Playwright returned empty or non-HTML content")
     except Exception as exc:
-        print(f"Error: Playwright failed - {exc}")
-        return None
+        if isinstance(exc, EmptyOrNonHTMLContentError):
+            raise exc
+        if "timeout" in str(exc).lower():
+            raise ConnectionTimeoutError("Playwright timed out while loading the page.") from exc
+        else:
+            raise ConnectionFailedError(f"Failed to connect to the target server. Playwright failed to load page: {exc}") from exc
 
 
-def fetch_html(url: str) -> Optional[str]:
+def fetch_html(url: str) -> str:
     """
     Fetch HTML from a URL with fallback mechanism.
     
@@ -123,49 +167,94 @@ def fetch_html(url: str) -> Optional[str]:
         url: The URL to fetch
         
     Returns:
-        HTML text if successful, None otherwise
+        HTML text if successful
+        
+    Raises:
+        URLValidationError, FetchError subclasses
     """
     global LAST_FETCH_METHOD
     LAST_FETCH_METHOD = "Unknown"
+    
     # Validate URL
-    if not url.startswith("http"):
-        print("Invalid URL. Please include http/https")
-        return None
+    if not url or not url.strip():
+        raise URLValidationError("URL cannot be empty or blank.")
+        
+    url_stripped = url.strip()
+    from urllib.parse import urlparse
+    parsed = urlparse(url_stripped)
+    
+    if not parsed.scheme:
+        raise URLValidationError("Invalid URL: Missing scheme (e.g. http:// or https:// is required).")
+        
+    scheme = parsed.scheme.lower()
+    if scheme not in ["http", "https"]:
+        raise URLValidationError(f"Invalid URL: Unsupported protocol '{scheme}'. Only http:// and https:// are supported.")
+        
+    if not parsed.netloc:
+        raise URLValidationError("Invalid URL: Missing domain/host name.")
+        
+    requests_err = None
+    
     # Try requests first (faster)
-    html = fetch_with_requests(url)
-    if html:
-        print("Fetched using requests")
-        LAST_FETCH_METHOD = "Requests"
-        return html
+    try:
+        html = fetch_with_requests(url_stripped)
+        if html:
+            logger.info("Fetched using requests")
+            LAST_FETCH_METHOD = "Requests"
+            return html
+    except FetchError as err:
+        requests_err = err
+    except Exception as err:
+        requests_err = FetchError(f"Unexpected requests error: {err}")
     
     # Fallback to Playwright for JS-heavy sites
-    print("Requests failed, trying Playwright...")
-    html = fetch_with_playwright(url)
-    if html:
-        print("Fetched using Playwright")
-        LAST_FETCH_METHOD = "Playwright"
-        return html
+    logger.info(f"Requests failed ({requests_err}). Trying Playwright...")
+    try:
+        html = fetch_with_playwright(url_stripped)
+        if html:
+            logger.info("Fetched using Playwright")
+            LAST_FETCH_METHOD = "Playwright"
+            return html
+    except FetchError as err:
+        # If Playwright also fails, raise the Playwright error or the more descriptive one
+        logger.warning(f"Playwright fallback also failed: {err}")
+        if requests_err:
+            raise requests_err
+        raise err
+    except Exception as err:
+        logger.warning(f"Playwright fallback failed with unexpected error: {err}")
+        if requests_err:
+            raise requests_err
+        raise FetchError(f"Failed to fetch content from both methods. Playwright error: {err}")
     
-    print("Error: Failed to fetch content from both methods")
-    return None
+    # If Playwright returned successfully but HTML check somehow bypassed and it was empty/non-HTML
+    if requests_err:
+        raise requests_err
+    raise EmptyOrNonHTMLContentError("Failed to fetch content from both methods.")
 
 
 if __name__ == "__main__":
+    try:
+        from backend.logging_config import configure_logging
+    except ImportError:
+        from logging_config import configure_logging
+    configure_logging()
     try:
         url = input("Enter the URL to fetch: ").strip()
         
         if not url:
             print("Error: URL cannot be empty")
         else:
-            html = fetch_html(url)
-            
-            if html:
+            try:
+                html = fetch_html(url)
                 print(f"\n{'='*60}")
                 print("First 500 characters of fetched HTML:")
                 print(f"{'='*60}")
                 print(html[:500])
-            else:
-                print("Failed to fetch content")
+            except ScrapeXError as exc:
+                print(f"Error: {exc.detail}")
+            except Exception as exc:
+                print(f"Unexpected error: {exc}")
                 
     except KeyboardInterrupt:
         print("\n\nOperation cancelled by user")
