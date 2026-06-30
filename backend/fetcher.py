@@ -176,14 +176,28 @@ def fetch_html(url: str) -> str:
     LAST_FETCH_METHOD = "Unknown"
     
     # Validate URL
-    if not url.startswith("http"):
-        raise URLValidationError("Invalid URL. Please include http/https")
+    if not url or not url.strip():
+        raise URLValidationError("URL cannot be empty or blank.")
+        
+    url_stripped = url.strip()
+    from urllib.parse import urlparse
+    parsed = urlparse(url_stripped)
+    
+    if not parsed.scheme:
+        raise URLValidationError("Invalid URL: Missing scheme (e.g. http:// or https:// is required).")
+        
+    scheme = parsed.scheme.lower()
+    if scheme not in ["http", "https"]:
+        raise URLValidationError(f"Invalid URL: Unsupported protocol '{scheme}'. Only http:// and https:// are supported.")
+        
+    if not parsed.netloc:
+        raise URLValidationError("Invalid URL: Missing domain/host name.")
         
     requests_err = None
     
     # Try requests first (faster)
     try:
-        html = fetch_with_requests(url)
+        html = fetch_with_requests(url_stripped)
         if html:
             print("Fetched using requests")
             LAST_FETCH_METHOD = "Requests"
@@ -196,7 +210,7 @@ def fetch_html(url: str) -> str:
     # Fallback to Playwright for JS-heavy sites
     print(f"Requests failed ({requests_err}). Trying Playwright...")
     try:
-        html = fetch_with_playwright(url)
+        html = fetch_with_playwright(url_stripped)
         if html:
             print("Fetched using Playwright")
             LAST_FETCH_METHOD = "Playwright"

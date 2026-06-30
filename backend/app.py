@@ -5,9 +5,10 @@ from __future__ import annotations
 import logging
 import os
 import uuid
-from fastapi import FastAPI, HTTPException, BackgroundTasks
+from fastapi import FastAPI, HTTPException, BackgroundTasks, Request
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, JSONResponse
 from pydantic import BaseModel, HttpUrl
 import uvicorn
 
@@ -60,6 +61,45 @@ app.add_middleware(
 	allow_methods=["*"],
 	allow_headers=["*"],
 )
+
+
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+	errors = exc.errors()
+	error_details = []
+	for err in errors:
+		loc = err.get("loc", [])
+		field_name = loc[-1] if loc else "payload"
+		err_type = err.get("type", "")
+		msg = err.get("msg", "")
+		
+		if field_name == "url":
+			if "missing" in err_type or "required" in msg.lower():
+				error_details.append("The 'url' parameter is required.")
+			elif "scheme" in err_type or "scheme" in msg.lower():
+				error_details.append("Invalid URL: Only 'http' and 'https' protocols are supported. Protocols like ftp, file, or data are rejected.")
+			elif "url" in err_type or "url" in msg.lower():
+				# Check if empty
+				input_val = err.get("input", "") or ""
+				if not str(input_val).strip():
+					error_details.append("Invalid URL: The URL cannot be empty or blank.")
+				else:
+					error_details.append(f"Invalid URL format: {msg}.")
+			else:
+				error_details.append(f"Invalid URL: {msg}.")
+		elif field_name == "body":
+			error_details.append("Malformed request: The request body is empty or not valid JSON.")
+		else:
+			error_details.append(f"Invalid value for '{field_name}': {msg}.")
+			
+	detail_msg = "; ".join(error_details) if error_details else "Malformed request payload."
+	logger.warning(f"Request validation failed for client request: {detail_msg}")
+	
+	return JSONResponse(
+		status_code=400,
+		content={"detail": f"Validation Error: {detail_msg}"}
+	)
+
 
 
 scrape_cache: dict = {}
