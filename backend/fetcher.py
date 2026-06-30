@@ -60,7 +60,7 @@ def fetch_with_requests(url: str) -> str:
     
     Raises specific FetchError subclasses on failure.
     """
-    print(f"Trying requests for: {url}")
+    logger.info(f"Trying requests for: {url}")
     headers = {
         "User-Agent": DEFAULT_USER_AGENT,
         "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
@@ -89,7 +89,7 @@ def fetch_with_requests(url: str) -> str:
         # pass it through and let parser/extractor decide.
         if _looks_like_html(html):
             if response.status_code != 200:
-                print(f"Warning: Non-200 response ({response.status_code}) but HTML was returned")
+                logger.warning(f"Non-200 response ({response.status_code}) but HTML was returned")
             return html
 
         raise EmptyOrNonHTMLContentError("The target URL did not return a valid HTML document. Requests returned empty or non-HTML content")
@@ -107,7 +107,7 @@ def fetch_with_playwright(url: str) -> str:
     
     Raises specific FetchError subclasses on failure.
     """
-    print(f"Trying Playwright for: {url}")
+    logger.info(f"Trying Playwright for: {url}")
     try:
         with sync_playwright() as p:
             browser = p.chromium.launch(
@@ -199,7 +199,7 @@ def fetch_html(url: str) -> str:
     try:
         html = fetch_with_requests(url_stripped)
         if html:
-            print("Fetched using requests")
+            logger.info("Fetched using requests")
             LAST_FETCH_METHOD = "Requests"
             return html
     except FetchError as err:
@@ -208,11 +208,11 @@ def fetch_html(url: str) -> str:
         requests_err = FetchError(f"Unexpected requests error: {err}")
     
     # Fallback to Playwright for JS-heavy sites
-    print(f"Requests failed ({requests_err}). Trying Playwright...")
+    logger.info(f"Requests failed ({requests_err}). Trying Playwright...")
     try:
         html = fetch_with_playwright(url_stripped)
         if html:
-            print("Fetched using Playwright")
+            logger.info("Fetched using Playwright")
             LAST_FETCH_METHOD = "Playwright"
             return html
     except FetchError as err:
@@ -234,6 +234,11 @@ def fetch_html(url: str) -> str:
 
 
 if __name__ == "__main__":
+    try:
+        from backend.logging_config import configure_logging
+    except ImportError:
+        from logging_config import configure_logging
+    configure_logging()
     try:
         url = input("Enter the URL to fetch: ").strip()
         

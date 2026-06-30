@@ -9,6 +9,9 @@ from typing import Optional, Dict
 import trafilatura
 import re
 from bs4 import BeautifulSoup
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 # Minimum text length threshold for valid content
@@ -61,7 +64,7 @@ def extract_with_trafilatura(html: str) -> Optional[Dict[str, str]]:
         }
         
     except Exception as e:
-        print(f"Trafilatura extraction error: {str(e)}")
+        logger.warning(f"Trafilatura extraction error: {e}", exc_info=True)
         return None
 
 
@@ -114,7 +117,7 @@ def extract_basic(html: str) -> Optional[Dict[str, str]]:
         }
         
     except Exception as e:
-        print(f"Basic extraction error: {str(e)}")
+        logger.warning(f"Basic extraction error: {e}", exc_info=True)
         return None
 
 
@@ -139,22 +142,27 @@ def extract_content(html: str) -> Optional[Dict[str, str]]:
     # Try trafilatura first (more powerful)
     result = extract_with_trafilatura(html)
     if result:
-        print("Content extracted using trafilatura")
+        logger.info("Content extracted using trafilatura")
         return result
     
     # Fallback to basic extraction
-    print("Trafilatura failed, using basic extraction...")
+    logger.info("Trafilatura failed, using basic extraction...")
     result = extract_basic(html)
     if result:
-        print("Content extracted using BeautifulSoup")
+        logger.info("Content extracted using BeautifulSoup")
         return result
     
     # Both methods failed
-    print("Failed to extract meaningful content")
+    logger.warning("Failed to extract meaningful content")
     return None
 
 
 if __name__ == "__main__":
+    try:
+        from backend.logging_config import configure_logging
+    except ImportError:
+        from logging_config import configure_logging
+    configure_logging()
     """Test block: Fetch and extract content from a URL"""
     try:
         from fetcher import fetch_html

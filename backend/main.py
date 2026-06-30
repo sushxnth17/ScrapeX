@@ -125,11 +125,11 @@ def scrape(url: str) -> Optional[Dict[str, Any]]:
         A dictionary containing normalized scrape results, ai_analysis, and strategy, or None if fetch fails.
     """
     # Stage 1: Fetch HTML
-    print("Fetching HTML...")
+    logger.info("Fetching HTML...")
     html = fetcher.fetch_html(url)
 
     # Stage 2: DOM Compression
-    print("Running DOM compression...")
+    logger.info("Running DOM compression...")
     dom_summary: Optional[Dict[str, Any]] = None
     try:
         compressor = DOMCompressor()
@@ -138,7 +138,7 @@ def scrape(url: str) -> Optional[Dict[str, Any]]:
         logger.warning("DOM compression failed", exc_info=True)
 
     # Stage 3: AI Analysis
-    print("Running AI analysis...")
+    logger.info("Running AI analysis...")
     analysis_obj: Optional[AIAnalysis] = None
     ai_analysis_dict: Optional[Dict[str, Any]] = None
     try:
@@ -149,7 +149,7 @@ def scrape(url: str) -> Optional[Dict[str, Any]]:
         logger.warning("AI analysis failed", exc_info=True)
 
     # Stage 4: Strategy Engine Determination
-    print("Evaluating scraping strategy...")
+    logger.info("Evaluating scraping strategy...")
     strategy_obj: Optional[Strategy] = None
     strategy_dict: Optional[Dict[str, Any]] = None
 
@@ -172,21 +172,23 @@ def scrape(url: str) -> Optional[Dict[str, Any]]:
         tables_str = "High Priority" if strategy_obj.prioritize_tables else "Standard"
         trafilatura_str = "Enabled" if strategy_obj.use_trafilatura else "Disabled"
 
-        print("\n[Strategy]")
-        print(f"Website Type : {website_type}")
-        print(f"Mode         : {mode}")
-        print(f"Playwright   : {playwright_str}")
-        print(f"Tables       : {tables_str}")
-        print(f"Trafilatura  : {trafilatura_str}\n")
+        logger.info(
+            f"Strategy Determined:\n"
+            f"  Website Type : {website_type}\n"
+            f"  Mode         : {mode}\n"
+            f"  Playwright   : {playwright_str}\n"
+            f"  Tables       : {tables_str}\n"
+            f"  Trafilatura  : {trafilatura_str}"
+        )
     else:
-        print("\n[Strategy]\nNo AI Strategy available. Operating in fallback mode.\n")
+        logger.info("No AI Strategy available. Operating in fallback mode.")
 
     # Stage 6: Adaptive Scraping
     # Decision 6a: Force Playwright if required by strategy
     if strategy_obj and strategy_obj.requires_playwright:
         current_method = getattr(fetcher, "LAST_FETCH_METHOD", "")
         if current_method != "Playwright":
-            print("[Adaptive Scraping] Strategy requires Playwright. Forcing Playwright rendering...")
+            logger.info("[Adaptive Scraping] Strategy requires Playwright. Forcing Playwright rendering...")
             try:
                 pw_html = fetcher.fetch_with_playwright(url)
                 if pw_html:
@@ -200,16 +202,16 @@ def scrape(url: str) -> Optional[Dict[str, Any]]:
     use_trafilatura = strategy_obj.use_trafilatura if strategy_obj else True
 
     if use_trafilatura:
-        print("[Adaptive Scraping] Running Trafilatura main content extractor...")
+        logger.info("[Adaptive Scraping] Running Trafilatura main content extractor...")
         try:
             extracted = extract_content(html)
         except Exception as exc:
             logger.warning("Content extraction failed", exc_info=True)
     else:
-        print("[Adaptive Scraping] Trafilatura disabled by strategy. Skipping content extractor.")
+        logger.info("[Adaptive Scraping] Trafilatura disabled by strategy. Skipping content extractor.")
 
     # Stage 7: Structured Parser Execution
-    print("Running structured parser...")
+    logger.info("Running structured parser...")
     parsed: Dict[str, Any] = {}
     try:
         parsed = parse_html(html, strategy=strategy_dict) or {}
@@ -246,7 +248,7 @@ def scrape(url: str) -> Optional[Dict[str, Any]]:
             getattr(fetcher, "LAST_FETCH_METHOD", "Requests")
         )
 
-    print("Pipeline execution complete.")
+    logger.info("Pipeline execution complete.")
     return result
 
 
@@ -267,6 +269,11 @@ def _print_summary(result: Dict[str, Any]) -> None:
 
 
 if __name__ == "__main__":
+    try:
+        from backend.logging_config import configure_logging
+    except ImportError:
+        from logging_config import configure_logging
+    configure_logging()
     """Interactive test block for the main scraping engine."""
     try:
         user_url = input("Enter URL: ").strip()

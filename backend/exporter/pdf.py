@@ -451,7 +451,7 @@ def export_to_pdf(data: Dict[str, Any], filename: str = "report.pdf") -> None:
 
 		# Build PDF with page footers
 		doc.build(story, onFirstPage=add_footer, onLaterPages=add_footer)
-		print("PDF report generated")
+		logger.info("PDF report generated")
 	except Exception as error:
 		logger.exception("Failed to generate PDF report")
 		raise PDFExportError(f"Failed to generate PDF report: {error}") from error

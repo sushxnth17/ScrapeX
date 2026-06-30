@@ -12,11 +12,12 @@ from fastapi.responses import FileResponse, JSONResponse
 from pydantic import BaseModel, HttpUrl
 import uvicorn
 
-# Configure logging to output to console
-logging.basicConfig(
-	level=logging.INFO,
-	format="%(asctime)s [%(levelname)s] %(name)s: %(message)s"
-)
+try:
+	from .logging_config import configure_logging
+except ImportError:
+	from logging_config import configure_logging
+
+configure_logging()
 logger = logging.getLogger(__name__)
 
 try:
