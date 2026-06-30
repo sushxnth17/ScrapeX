@@ -201,6 +201,29 @@ in your browser.
 - Smart caching
 - Website compatibility checker
 
+# 🧪 Testing
+
+ScrapeX uses `pytest` for automated unit and integration tests. All external requests are mocked to ensure tests run offline without hitting target websites.
+
+### Install Test Dependencies
+```bash
+python -m pip install pytest pytest-mock
+```
+
+### Run Tests
+To run the test suite:
+```bash
+python -m pytest tests/
+```
+
+The test suite validates:
+- **Fetcher**: Mocked requests and playwright navigations.
+- **Extractor**: Text extraction and parser fallbacks.
+- **Parser**: Document structure mapping (titles, headings, links, tables).
+- **DOM Compressor**: Metadata and HTML compression keys.
+- **Strategy Engine**: Scraping strategy rules (modes, playwright triggers).
+- **Exporters**: Structured CSV saving and ReportLab PDF document compilation.
+
 ---
 
 # 🤝 Contributing
